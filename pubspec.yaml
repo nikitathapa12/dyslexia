@@ -1,0 +1,200 @@
+name: dyslearn
+description: A new Flutter project.
+
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_spinkit: ^5.2.1
+  cupertino_icons: ^1.0.2
+  google_fonts: ^6.2.1
+  firebase_auth: ^5.2.0
+  firebase_core: ^3.4.0
+  audioplayers: ^6.1.0
+  shared_preferences: ^2.3.2
+  flame: ^1.19.0
+  spritewidget: ^2.0.1
+  cloud_firestore: ^5.4.2
+  flare_flutter: ^3.0.0
+  flutter_svg: ^2.0.10+1
+  flutter_tts: ^4.0.2
+  vibration: ^2.0.0
+  confetti: ^0.8.0
+  image_picker: ^1.1.2
+  permission_handler: ^11.3.1
+  firebase_storage: ^12.3.5
+  file_picker: ^8.1.4
+  auto_size_text_field: ^2.2.4
+  dropdown_button2: ^2.3.9
+  dropdown_textfield: ^1.2.0
+
+
+
+
+
+
+
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+
+  flutter_lints: ^2.0.0
+
+
+
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/background.jpg
+    - assets/images/homepge.gif
+    - assets/images/image1.jpg
+    - assets/audio/correct.mp3
+    - assets/audio/incorrect.mp3
+    - assets/images/roads.jpg
+    - assets/audio/background_music.mp3
+    - assets/images/bg_dys.png
+    - assets/images/apple.png
+    - assets/images/watermelon.png
+    - assets/images/blueberry.png
+    - assets/images/banana.png
+    - assets/images/mango_orange.png
+    - assets/images/jungle.jpg
+    - assets/images/black.png
+    - assets/images/grapes.png
+    - assets/images/peach.png
+    - assets/images/cherry.png
+    - assets/audio/red.mp3
+    - assets/audio/yellow.mp3
+    - assets/audio/blue.mp3
+    - assets/audio/green.mp3
+    - assets/audio/orange.mp3
+    - assets/audio/black.mp3
+    - assets/audio/purple.mp3
+    - assets/audio/pink.mp3
+    - assets/images/balloon.png
+    - assets/images/clouds_background.png
+    - assets/images/bag_green.jpg
+    - assets/images/bag_blue.jpg
+    - assets/images/bag_red.png
+    - assets/images/bag_yellow.png
+    - assets/images/kid1.png
+    - assets/images/kid2.png
+    - assets/images/kid3.jpg
+    - assets/images/kid4.jpg
+    - assets/images/gift_red.png
+    - assets/images/gift_green.png
+    - assets/images/gift_blue.png
+    - assets/images/gift_purple.png
+    - assets/images/gift_orange.png
+    - assets/images/gift_yellow.png
+    - assets/audio/hello.mp3
+    - assets/audio/h.mp3
+    - assets/audio/e.mp3
+    - assets/audio/l.mp3
+    - assets/audio/o.mp3
+    - assets/images/hello.gif
+    - assets/images/hello.gif
+    - assets/images/earth-2768_512.gif
+    - assets/images/cat.gif
+    - assets/audio/c.mp3
+    - assets/audio/d.mp3
+    - assets/audio/r.mp3
+    - assets/audio/w.mp3
+    - assets/audio/t.mp3
+    - assets/audio/world.mp3
+    - assets/audio/cat.mp3
+    - assets/images/monkey-7751_512.gif
+    - assets/audio/monkey.mp3
+    - assets/images/soccer-9133_256.gif
+    - assets/audio/ball.mp3
+    - assets/audio/n.mp3
+    - assets/audio/y.mp3
+    - assets/audio/k.mp3
+    - assets/audio/m.mp3
+    - assets/audio/b.mp3
+    - assets/audio/a.mp3
+    - assets/images/cake.png
+    - assets/images/candle.gif
+    - assets/images/cherry.png
+    - assets/audio/1.mp3
+    - assets/audio/2.mp3
+    - assets/audio/3.mp3
+    - assets/audio/4.mp3
+    - assets/audio/5.mp3
+    - assets/audio/6.mp3
+    - assets/audio/7.mp3
+    - assets/audio/8.mp3
+    - assets/audio/9.mp3
+    - assets/images/star.png
+    - assets/audio/Twinkle-twinkle.mp3
+    - assets/images/color_recognition.jpg
+    - assets/images/letter.jpg
+    - assets/images/num.jpg
+    - assets/images/room.jpg
+    - assets/images/GO.png
+    - assets/images/bg1.png
+    - assets/images/cartoon.gif
+    - assets/images/reload_button.png
+    - assets/images/next.gif
+    - assets/images/star_filled.png
+    - assets/images/bbg.png
+    - assets/images/google-play-games.png
+    - assets/images/rope.png
+    - assets/images/app_logo.png
+    - assets/images/board.png
+    - assets/images/loading_image.png
+    - assets/images/teacher_background.jpg
+    - assets/images/bg.png
+
+
+
+
+
+
+
+
+
+
+
+
+#    - assets/audio/correct.mp3
+
+
+  # An image asset can refer to one or more resolution-specific "variants", see
+  # https://flutter.dev/assets-and-images/#resolution-aware
+
+  # For details regarding adding assets from package dependencies, see
+  # https://flutter.dev/assets-and-images/#from-packages
+
+  # To add custom fonts to your application, add a fonts section here,
+  # in this "flutter" section. Each entry in this list should have a
+  # "family" key with the font family name, and a "fonts" key with a
+  # list giving the asset and other descriptors for the font. For
+  # example:
+fonts:
+     - family: OpenDyslexic
+       fonts:
+         - asset: assets/fonts/OpenDyslexic-Regular.otf
+  #       - asset: fonts/Schyler-Italic.ttf
+  #         style: italic
+     - family: Caveat
+       fonts:
+         - asset: assets/fonts/Caveat-Regular.ttf
+  #       - asset: fonts/TrajanPro_Bold.ttf
+  #         weight: 700
+  #
+  # For details regarding fonts from package dependencies,
+  # see https://flutter.dev/custom-fonts/#from-packages

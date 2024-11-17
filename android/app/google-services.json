@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "181332353879",
+    "project_id": "dyslearn-78e01",
+    "storage_bucket": "dyslearn-78e01.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:181332353879:android:19063e5b8a67ce87b8d412",
+        "android_client_info": {
+          "package_name": "com.example.dyslearn"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDw9Xm7eiNtEDsla1c6tgSN2ZLayuJfIvA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
