@@ -4,6 +4,7 @@ import 'package:dyslearn/Teacher/ProfilePage.dart';
 import 'package:dyslearn/Teacher/TeacherFeedbackPage.dart';
 import 'package:dyslearn/Teacher/ViewStudents.dart';
 import 'package:dyslearn/Teacher/WelcomePage.dart';
+import 'package:dyslearn/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -16,11 +17,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
+
     TeacherWelcomePage(), // Welcome page
     TeacherAddAssignmentPage(), // Add Assignment
     StudentViewPage(), // View Students
     ProfilePage(), // Teacher Profile
     TeacherFeedbackPage(), // View Feedback
+    LoginPage(),
   ];
 
   void _onDrawerItemTap(int index) {

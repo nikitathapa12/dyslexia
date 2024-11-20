@@ -7,6 +7,8 @@ import 'package:dyslearn/Games/counting_number/StarCountingGame.dart';
 import 'package:flutter/material.dart';
 
 class GamesPage extends StatelessWidget {
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,7 +37,7 @@ class GamesPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ColorMatchingGame()),
+                  MaterialPageRoute(builder: (context) => ColorRecognitionGame( )),
                 );
               },
             ),

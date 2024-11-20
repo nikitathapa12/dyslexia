@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'ViewAssignmentPage.dart'; // Import your ViewAssignmentPage
+import 'ViewAssignmentPage.dart'; // Import the updated ViewAssignmentPage
 
 class AssignmentsPage extends StatelessWidget {
+  final String parentId;
+  final String childId;
+  final String childUsername;
+  final String parentEmail;
+
+  AssignmentsPage({
+    required this.parentId,
+    required this.childId,
+    required this.childUsername,
+    required this.parentEmail,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,8 +53,13 @@ class AssignmentsPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            ViewAssignmentPage(assignmentId: assignment.id),
+                        builder: (context) => ViewAssignmentPage(
+                          assignmentId: assignment.id,
+                          parentId: parentId,
+                          childId: childId,
+                          childUsername: childUsername,
+                          parentEmail: parentEmail,
+                        ),
                       ),
                     );
                   },

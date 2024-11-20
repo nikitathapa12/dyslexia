@@ -1,14 +1,53 @@
+import 'package:dyslearn/Parent/FeedbackPage.dart';
+import 'package:dyslearn/Parent/ParentLoginPage.dart';
+import 'package:dyslearn/Parent/ProgressReportPage.dart';
 import 'package:dyslearn/profile.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Ensure this import is present
 import 'package:dyslearn/AssignmentPage.dart';
 import 'package:dyslearn/games.dart';
 
-class MenuPage extends StatelessWidget {
-  final String userId;
-  final String userName;
+class MenuPage extends StatefulWidget {
+  final String selectedChildName; // Added field to store the selected child's name
 
-  MenuPage({required this.userId, required this.userName});
+  MenuPage({Key? key, required this.selectedChildName}) : super(key: key);
+
+  @override
+  _MenuPageState createState() => _MenuPageState();
+}
+
+class _MenuPageState extends State<MenuPage> {
+  String _userEmail = ''; // Initially empty, to be filled after fetching from Firebase
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserEmail();
+  }
+
+  // Method to fetch user email from Firebase
+  Future<void> _loadUserEmail() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        _userEmail = user.email ?? 'No email available';
+      });
+    }
+  }
+
+  // Method to logout the user
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    setState(() {
+      _userEmail = ''; // Clear user email after logout
+    });
+    // Navigate directly to login page after logging out
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => ParentLoginPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +66,8 @@ class MenuPage extends StatelessWidget {
                 .where('read', isEqualTo: false)
                 .snapshots(),
             builder: (context, snapshot) {
-              int unreadCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+              int unreadCount =
+              snapshot.hasData ? snapshot.data!.docs.length : 0;
               return Stack(
                 alignment: Alignment.center,
                 children: [
@@ -93,23 +133,40 @@ class MenuPage extends StatelessWidget {
                   children: [
                     Icon(Icons.person, size: 50, color: Colors.white),
                     SizedBox(width: 10),
-                    Text(
-                      'Welcome, $userName',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontFamily: 'OpenDyslexic',
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Welcome',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          _userEmail,  // Displaying the user email below the welcome text
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                          overflow: TextOverflow.ellipsis, // This will ensure long email doesn't overflow
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'Child: ${widget.selectedChildName}',  // Display selected child's name
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ],
-                ),
-                SizedBox(height: 10),
-                Text(
-                  'User ID: $userId',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 18,
-                  ),
                 ),
               ],
             ),
@@ -118,17 +175,22 @@ class MenuPage extends StatelessWidget {
             context: context,
             title: 'View Progress',
             onTap: () {
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ProgressReportPage(childId: '',),
+                ),
+              );
             },
           ),
           _buildDrawerItem(
             context: context,
-            title: 'Profile',
+            title: 'Child Profile',
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => Profile(userId: userId), // Passing userId only, as per updated profile page
+                  builder: (context) => ChildProfilePage(),
                 ),
               );
             },
@@ -137,7 +199,30 @@ class MenuPage extends StatelessWidget {
             context: context,
             title: 'Send Feedback to Teachers',
             onTap: () {
-              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FeedbackPage(),
+                ),
+              );
+            },
+          ),
+          Divider(),
+          // Login/Signup or Logout button
+          _buildDrawerItem(
+            context: context,
+            title: _userEmail.isEmpty ? 'Login/Signup' : 'Logout',
+            onTap: () {
+              if (_userEmail.isEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ParentLoginPage(),
+                  ),
+                );
+              } else {
+                _logout();
+              }
             },
           ),
         ],
@@ -172,7 +257,7 @@ class MenuPage extends StatelessWidget {
                 );
               },
             ),
-            SizedBox(height: 30), // Added spacing between cards
+            SizedBox(height: 30),
             _buildAnimatedCard(
               context: context,
               icon: Icons.assignment,
@@ -182,7 +267,14 @@ class MenuPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => AssignmentsPage()),
+                  MaterialPageRoute(
+                    builder: (context) => AssignmentsPage(
+                      parentId: '',
+                      childId: '',
+                      childUsername: '',
+                      parentEmail: '',
+                    ),
+                  ),
                 );
               },
             ),
@@ -193,76 +285,7 @@ class MenuPage extends StatelessWidget {
   }
 
   void _showNotificationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('notifications')
-              .orderBy('timestamp', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            }
-
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return AlertDialog(
-                title: Text("Notifications"),
-                content: Text("No new notifications."),
-                actions: [
-                  TextButton(
-                    child: Text("Close"),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              );
-            }
-
-            final notifications = snapshot.data!.docs;
-
-            return AlertDialog(
-              title: Text("Notifications"),
-              content: Container(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = notifications[index];
-                    final title = notification['title'];
-                    final message = notification['message'];
-
-                    return ListTile(
-                      title: Text(title),
-                      subtitle: Text(message),
-                      trailing: Icon(Icons.notifications_active, color: Colors.teal),
-                      onTap: () async {
-                        await FirebaseFirestore.instance
-                            .collection('notifications')
-                            .doc(notification.id)
-                            .update({'read': true});
-                        Navigator.of(context).pop();
-                      },
-                    );
-                  },
-                ),
-              ),
-              actions: [
-                TextButton(
-                  child: Text("Close"),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+    // Notification dialog logic
   }
 
   Widget _buildAnimatedCard({

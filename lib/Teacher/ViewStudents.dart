@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class StudentViewPage extends StatefulWidget {
   @override
@@ -7,112 +8,138 @@ class StudentViewPage extends StatefulWidget {
 }
 
 class _StudentViewPageState extends State<StudentViewPage> {
-  Map<String, List<String>> parentData = {}; // To store parent email and children data
+  List<Map<String, dynamic>> _children = [];  // To store children data
+
+  // Fetch children profiles along with their parents' email IDs
+  Future<void> _fetchChildren() async {
+    FirebaseAuth auth = FirebaseAuth.instance;
+    User? teacherUser = auth.currentUser;
+
+    if (teacherUser == null) return;
+
+    QuerySnapshot parentsSnapshot = await FirebaseFirestore.instance
+        .collection('parents')
+        .get(); // Fetch all parents
+
+    List<Map<String, dynamic>> childrenData = [];
+
+    // Loop through each parent and their children
+    for (var parentDoc in parentsSnapshot.docs) {
+      String parentEmail = parentDoc['email'] ?? 'No Email';
+
+      QuerySnapshot childrenSnapshot = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parentDoc.id)
+          .collection('children')
+          .get();  // Fetch all children for this parent
+
+      for (var childDoc in childrenSnapshot.docs) {
+        var childData = {
+          'childId': childDoc.id,
+          'username': childDoc['username'] ?? 'No Username',
+          'parentEmail': parentEmail,
+        };
+        childrenData.add(childData);
+      }
+    }
+
+    setState(() {
+      _children = childrenData;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    _fetchAllParentDetails();
+    _fetchChildren();  // Call fetch on init
   }
 
-  // Fetch all parents and their children from Firestore
-  Future<void> _fetchAllParentDetails() async {
-    try {
-      // Get all parent documents from the 'usernames' collection
-      QuerySnapshot parentSnapshot =
-      await FirebaseFirestore.instance.collection('usernames').get();
+  // Show the progress of the selected child
+  void _showChildProgress(String childId) async {
+    FirebaseAuth auth = FirebaseAuth.instance;
+    User? teacherUser = auth.currentUser;
+    if (teacherUser == null) return;
 
-      Map<String, List<String>> fetchedParentData = {};
+    DocumentSnapshot childDoc = await FirebaseFirestore.instance
+        .collection('parents')
+        .doc(teacherUser.uid)
+        .collection('children')
+        .doc(childId)
+        .get();
 
-      // Iterate through each parent document
-      for (var parentDoc in parentSnapshot.docs) {
-        String parentEmail = parentDoc.id; // Parent email as the document ID
-        print('Fetching data for Parent: $parentEmail');
+    if (childDoc.exists) {
+      var childData = childDoc.data() as Map<String, dynamic>;
+      int progress = childData['progress'] ?? 0;
+      int timeSpent = childData['timeSpent'] ?? 0;
+      List achievements = childData['achievements'] ?? [];
 
-        // Check if a `children` subcollection exists
-        QuerySnapshot childrenSnapshot =
-        await parentDoc.reference.collection('children').get();
-
-        if (childrenSnapshot.docs.isNotEmpty) {
-          // If the `children` subcollection exists, fetch its data
-          List<String> childUsernames = childrenSnapshot.docs.map((childDoc) {
-            final data = childDoc.data() as Map<String, dynamic>;
-            return data['username']?.toString() ?? 'No username found';
-          }).toList();
-
-          fetchedParentData[parentEmail] = childUsernames;
-        } else {
-          // If no `children` subcollection, check if the `username` field exists directly in the parent document
-          final parentData = parentDoc.data() as Map<String, dynamic>;
-          if (parentData.containsKey('username')) {
-            fetchedParentData[parentEmail] = [parentData['username']];
-          } else {
-            fetchedParentData[parentEmail] = ['No children found'];
-          }
-        }
-      }
-
-      setState(() {
-        parentData = fetchedParentData;
-      });
-    } catch (e) {
-      print('Error fetching parent data: $e');
+      // Show the progress in a dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Progress of ${childData['username']}'),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Progress: $progress%'),
+                Text('Time Spent: $timeSpent minutes'),
+                Text('Achievements: ${achievements.join(', ')}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Close'),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
-
-
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Student View'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: parentData.isEmpty
-            ? Center(
-          child: CircularProgressIndicator(), // Loading indicator
-        )
-            : ListView.builder(
-          itemCount: parentData.length,
-          itemBuilder: (context, index) {
-            String parentEmail = parentData.keys.elementAt(index);
-            List<String> children = parentData[parentEmail]!;
 
-            return Card(
-              elevation: 5,
-              margin: EdgeInsets.symmetric(vertical: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Parent Email: $parentEmail',
-                      style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Total Students: ${_children.length}',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 20),
+            _children.isEmpty
+                ? Center(child: CircularProgressIndicator())
+                : Expanded(
+              child: ListView.builder(
+                itemCount: _children.length,
+                itemBuilder: (context, index) {
+                  var child = _children[index];
+                  String username = child['username'];
+                  String parentEmail = child['parentEmail'];
+
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    child: ListTile(
+                      title: Text(username),
+                      subtitle: Text('Parent Email: $parentEmail'),
+                      trailing: Icon(Icons.arrow_forward),
+                      onTap: () {
+                        _showChildProgress(child['childId']);
+                      },
                     ),
-                    SizedBox(height: 10),
-                    Text(
-                      'Children:',
-                      style: TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    ...children.map((child) => Padding(
-                      padding:
-                      const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        '- $child',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                    )),
-                  ],
-                ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );

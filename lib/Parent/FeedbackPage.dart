@@ -8,38 +8,54 @@ class FeedbackPage extends StatefulWidget {
 }
 
 class _FeedbackPageState extends State<FeedbackPage> {
-  TextEditingController _feedbackController = TextEditingController();
-  String? selectedUsername; // Selected username
-  List<String> usernames = []; // Usernames associated with the parent
+  final TextEditingController _feedbackController = TextEditingController();
+  String? selectedUsername; // Selected child's username
+  List<String> usernames = []; // List of children usernames
+  bool isLoading = true; // Loading indicator while fetching usernames
 
   @override
   void initState() {
     super.initState();
-    _fetchUsernames(); // Fetch usernames when the page loads
+    _fetchChildrenUsernames(); // Fetch children usernames when the page loads
   }
 
-  // Fetch all usernames associated with the parent's email
-  void _fetchUsernames() async {
-    User? user = FirebaseAuth.instance.currentUser;
+  // Fetch all children profiles associated with the logged-in parent
+  Future<void> _fetchChildrenUsernames() async {
+    User? parentUser = FirebaseAuth.instance.currentUser;
+    if (parentUser != null) {
+      try {
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('parents') // Parent collection
+            .doc(parentUser.uid) // Get the parent document
+            .collection('children') // Children subcollection
+            .get();
 
-    if (user != null) {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('usernames')
-          .where('parentEmail', isEqualTo: user.email)
-          .get();
-
-      if (querySnapshot.docs.isNotEmpty) {
+        if (querySnapshot.docs.isNotEmpty) {
+          setState(() {
+            usernames = querySnapshot.docs
+                .map((doc) => doc['name'] as String) // Assuming 'name' field exists
+                .toList();
+          });
+        } else {
+          setState(() {
+            usernames = [];
+          });
+        }
+      } catch (e) {
+        print('Error fetching children: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching children: $e')),
+        );
+      } finally {
         setState(() {
-          usernames = querySnapshot.docs
-              .map((doc) => doc['username'] as String)
-              .toList();
+          isLoading = false;
         });
       }
     }
   }
 
-  // Submit feedback
-  void _submitFeedback() async {
+  // Submit feedback for the selected child
+  Future<void> _submitFeedback() async {
     if (selectedUsername == null || selectedUsername!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Please select a child\'s username'),
@@ -56,23 +72,35 @@ class _FeedbackPageState extends State<FeedbackPage> {
       return;
     }
 
-    User? user = FirebaseAuth.instance.currentUser;
+    User? parentUser = FirebaseAuth.instance.currentUser;
 
-    // Save feedback to Firestore
-    await FirebaseFirestore.instance.collection('feedback').add({
-      'parentEmail': user?.email,
-      'username': selectedUsername,
-      'feedback': _feedbackController.text.trim(),
-      'timestamp': FieldValue.serverTimestamp(),
-    });
+    if (parentUser != null) {
+      try {
+        // Save feedback to Firestore
+        await FirebaseFirestore.instance.collection('feedbacks').add({
+          'parentEmail': parentUser.email,
+          'childUsername': selectedUsername,
+          'feedback': _feedbackController.text.trim(),
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('Feedback submitted successfully!'),
-      backgroundColor: Colors.green,
-    ));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Feedback submitted successfully!'),
+          backgroundColor: Colors.green,
+        ));
 
-    // Clear the feedback field after submission
-    _feedbackController.clear();
+        // Clear the feedback field after submission
+        _feedbackController.clear();
+        setState(() {
+          selectedUsername = null; // Reset the dropdown
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error submitting feedback: $e'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
   }
 
   @override
@@ -80,21 +108,23 @@ class _FeedbackPageState extends State<FeedbackPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Feedback',
-          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 18),
+          'Submit Feedback',
+          style: TextStyle(fontSize: 18),
         ),
-        backgroundColor: Colors.lightBlue,
+        backgroundColor: Colors.blue,
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dropdown for selecting a username
+            // Dropdown for selecting the child's username
             Text(
               'Select Child\'s Username:',
-              style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
+              style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 8),
             DropdownButtonFormField<String>(
@@ -115,13 +145,14 @@ class _FeedbackPageState extends State<FeedbackPage> {
                 fillColor: Colors.white,
                 border: OutlineInputBorder(),
               ),
+              hint: Text('Choose a child'),
             ),
             SizedBox(height: 16),
 
             // Feedback text field
             Text(
               'Enter Feedback:',
-              style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
+              style: TextStyle(fontSize: 16),
             ),
             SizedBox(height: 8),
             TextField(
@@ -139,21 +170,10 @@ class _FeedbackPageState extends State<FeedbackPage> {
             // Submit button
             Center(
               child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueGrey,
-                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
                 onPressed: _submitFeedback,
                 child: Text(
                   'Submit Feedback',
-                  style: TextStyle(
-                    fontFamily: 'OpenDyslexic',
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ),

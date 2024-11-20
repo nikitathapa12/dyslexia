@@ -20,8 +20,8 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('feedback') // Feedback collection
-            .orderBy('timestamp', descending: true)
+            .collection('feedbacks') // Updated to correct collection name
+            .orderBy('timestamp', descending: true) // Sort by timestamp for latest feedback first
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
@@ -43,19 +43,25 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
             itemCount: feedbackDocs.length,
             itemBuilder: (context, index) {
               final feedback = feedbackDocs[index];
+
+              // Extract the feedback details
+              String? childUsername = feedback['childUsername'] ?? 'Unknown'; // Fetch the child username
+              String? parentEmail = feedback['parentEmail'] ?? 'Unknown Parent'; // Fetch the parent email
+              String? feedbackText = feedback['feedback'] ?? 'No feedback provided'; // Fetch the feedback text
+
               return Card(
                 margin: EdgeInsets.all(8),
                 child: ListTile(
                   title: Text(
-                    'Child: ${feedback['username'] ?? 'Unknown'}',
+                    'Child: $childUsername',
                     style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 18),
                   ),
                   subtitle: Text(
-                    feedback['feedback'] ?? '',
+                    feedbackText!,
                     style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
                   ),
                   trailing: Text(
-                    feedback['parentEmail'] ?? '',
+                    'From: $parentEmail',
                     style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 12),
                   ),
                 ),

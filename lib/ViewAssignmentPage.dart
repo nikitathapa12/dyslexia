@@ -8,7 +8,7 @@ class ViewAssignmentPage extends StatefulWidget {
   final String assignmentId; // Declare assignmentId here
 
   // Constructor to accept assignmentId as a parameter
-  ViewAssignmentPage({required this.assignmentId});
+  ViewAssignmentPage({required this.assignmentId, required String parentEmail, required String childUsername, required String childId, required String parentId});
 
   @override
   _ViewAssignmentPageState createState() => _ViewAssignmentPageState();

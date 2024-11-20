@@ -1,3 +1,4 @@
+import 'package:dyslearn/MenuPage.dart';
 import 'package:dyslearn/Parent/ParentDashboard.dart';
 import 'package:dyslearn/Parent/SignUpPage.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +29,7 @@ class _ParentLoginPageState extends State<ParentLoginPage> {
         // Navigate to the ParentDashboardPage
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ParentDashboardPage()),
+          MaterialPageRoute(builder: (context) => MenuPage(selectedChildName: '',)),
         );
       } on FirebaseAuthException catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));

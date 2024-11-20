@@ -170,7 +170,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ForParentsPage()), // Navigate to ForParentsPage
+                      MaterialPageRoute(builder: (context) => MenuPage(selectedChildName: '',)), // Navigate to ForParentsPage
                     );
                   },
                   style: ElevatedButton.styleFrom(

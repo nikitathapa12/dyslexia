@@ -1,50 +1,91 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class UserService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Save the username to Firestore with parent's email
-  Future<void> saveUserName(String username) async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      String email = user.email ?? ''; // Use parent's email
-      DocumentReference userDoc = _firestore.collection('users').doc(email);
+  // Method to add or update game data for a specific child
+  Future<void> addGamePlayed({
+    required String parentId,
+    required String childId,
+    required String gameName,
+    required int lastScore,
+  }) async {
+    try {
+      // Reference to the parents collection
+      DocumentReference parentDoc = _firestore.collection('parents').doc(parentId);
 
-      // Check if the username already exists for this parent
-      DocumentSnapshot docSnapshot = await userDoc.get();
-      if (docSnapshot.exists) {
-        List<String> existingUsernames = List.from(docSnapshot['usernames'] ?? []);
+      // Reference to the games collection under parent
+      DocumentReference gameDoc = parentDoc
+          .collection('games')
+          .doc(gameName)  // Use the game name as a document ID
+          .collection('gameData')
+          .doc(childId);  // Use the childId as the document ID in the gameData collection
 
-        if (!existingUsernames.contains(username)) {
-          // Add username if it's not already in the list
-          existingUsernames.add(username);
-          await userDoc.update({
-            'usernames': existingUsernames,
-          });
-        }
-      } else {
-        // If the document doesn't exist, create it and save the username
-        await userDoc.set({
-          'usernames': [username], // Store as a list of usernames
+      // Fetch existing game data if it exists
+      DocumentSnapshot snapshot = await gameDoc.get();
+
+      if (snapshot.exists) {
+        // If game data exists, update it
+        Map<String, dynamic> existingData = snapshot.data() as Map<String, dynamic>;
+
+        int updatedTotalScore = existingData['totalScore'] + lastScore;
+        int updatedAttempts = existingData['attempts'] + 1;
+
+        // Update the document with new values
+        await gameDoc.update({
+          'lastScore': lastScore,
+          'totalScore': updatedTotalScore,
+          'attempts': updatedAttempts,
+          'updatedAt': FieldValue.serverTimestamp(),
         });
+        print('Game data updated for child: $childId');
+      } else {
+        // If game data does not exist, create a new document
+        await gameDoc.set({
+          'childId': childId,
+          'gameName': gameName,
+          'lastScore': lastScore,
+          'totalScore': lastScore,  // Set totalScore to lastScore initially
+          'attempts': 1,  // Set initial attempts to 1
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+        print('New game data added for child: $childId');
       }
+    } catch (e) {
+      print('Error updating game data for child $childId: $e');
+      throw e;
     }
   }
 
-  // Fetch all usernames associated with the parent's email
-  Future<List<String>> getUserNames() async {
-    User? user = _auth.currentUser;
-    if (user != null) {
-      String email = user.email ?? ''; // Use parent's email
-      DocumentSnapshot docSnapshot = await _firestore.collection('users').doc(email).get();
+  // Method to fetch game data for a specific child
+  Future<Map<String, dynamic>?> fetchGameData({
+    required String parentId,
+    required String childId,
+    required String gameName,
+  }) async {
+    try {
+      DocumentReference gameDoc = _firestore
+          .collection('parents')
+          .doc(parentId)
+          .collection('games')
+          .doc(gameName)
+          .collection('gameData')
+          .doc(childId);
 
-      if (docSnapshot.exists) {
-        List<dynamic> usernames = docSnapshot['usernames'] ?? [];
-        return List<String>.from(usernames);
+      DocumentSnapshot snapshot = await gameDoc.get();
+
+      if (snapshot.exists) {
+        return snapshot.data() as Map<String, dynamic>;
+      } else {
+        print('No game data found for child $childId in game $gameName');
+        return null;
       }
+    } catch (e) {
+      print('Error fetching game data: $e');
+      throw e;
     }
-    return []; // Return empty list if no usernames found
   }
+
+  fetchChildProgress({required String parentId, required String childId}) {}
 }

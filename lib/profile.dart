@@ -1,194 +1,181 @@
+import 'package:dyslearn/Parent/ProgressReportPage.dart';
+import 'package:dyslearn/Parent/ViewChildList.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-class Profile extends StatefulWidget {
-  final String userId;
-
-  Profile({required this.userId}); // Only userId is required
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+class ChildProfilePage extends StatefulWidget {
   @override
-  _ProfileState createState() => _ProfileState();
+  _ChildProfilePageState createState() => _ChildProfilePageState();
 }
 
-class _ProfileState extends State<Profile> {
+class _ChildProfilePageState extends State<ChildProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  String? _name;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _levelController = TextEditingController();
+  final TextEditingController _preferencesController = TextEditingController();
+  File? _imageFile; // For storing profile picture
+  bool _isLoading = false;
+
+  Future<void> _createChildProfile() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // Get the current user (parent)
+      User? parent = FirebaseAuth.instance.currentUser;
+
+      if (parent == null) {
+        // If no user is logged in, show a message to log in
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please login to create a child profile.')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      try {
+        // Reference to the specific parent document
+        DocumentReference parentDoc =
+        FirebaseFirestore.instance.collection('parents').doc(parent.uid);
+
+        // Reference to Firestore subcollection 'children' under the parent
+        CollectionReference children = parentDoc.collection('children');
+
+        // Prepare data to store in Firestore
+        await children.add({
+          'name': _nameController.text,
+          'age': int.tryParse(_ageController.text) ?? 0,
+          'level': _levelController.text,
+          'preferences': _preferencesController.text,
+          'profilePic': _imageFile != null ? await _uploadProfilePic() : null,
+          'createdAt': Timestamp.now(),
+        });
+
+        // Clear fields after submission
+        _nameController.clear();
+        _ageController.clear();
+        _levelController.clear();
+        _preferencesController.clear();
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Child profile created successfully!')));
+      } catch (e) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error creating child profile: $e')));
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<String?> _uploadProfilePic() async {
+    // Code to upload image to Firebase Storage if needed
+    // Returns the URL of the uploaded image
+    if (_imageFile == null) return null;
+
+    // Assuming Firebase Storage setup is done and a reference to a folder is available
+    try {
+      final storageReference = FirebaseStorage.instance
+          .ref()
+          .child('profile_pics/${DateTime.now().millisecondsSinceEpoch}');
+      final uploadTask = storageReference.putFile(_imageFile!);
+      await uploadTask;
+      final downloadURL = await storageReference.getDownloadURL();
+      return downloadURL;
+    } catch (e) {
+      return null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Profile',
-          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 24),
-        ),
-        backgroundColor: Colors.teal,
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.userId)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || snapshot.data == null) {
-            return Center(child: Text("User data not found."));
-          }
-
-          var userData = snapshot.data!.data() as Map<String, dynamic>;
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildProfileSection(userData),
-                const SizedBox(height: 20),
-                _buildAchievementsSection(userData),
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: () => _showUpdateProfileDialog(context, userData),
-                  icon: Icon(Icons.edit),
-                  label: Text("Update Profile"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                    textStyle: TextStyle(fontSize: 18),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  // Build the profile section showing only the username
-  Widget _buildProfileSection(Map<String, dynamic> userData) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Profile Details",
-              style: TextStyle(
-                fontFamily: 'OpenDyslexic',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              "Username: ${userData['username'] ?? 'N/A'}", // Only show username
-              style: TextStyle(fontSize: 18),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Build the achievements section (if any)
-  Widget _buildAchievementsSection(Map<String, dynamic> userData) {
-    List achievements = userData['achievements'] ?? [];
-
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Achievements",
-              style: TextStyle(
-                fontFamily: 'OpenDyslexic',
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 10),
-            achievements.isNotEmpty
-                ? ListView.builder(
-              shrinkWrap: true,
-              itemCount: achievements.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: Icon(Icons.star, color: Colors.amber),
-                  title: Text(achievements[index]),
-                );
-              },
-            )
-                : Text("No achievements yet."),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Show the update profile dialog to edit the username
-  void _showUpdateProfileDialog(BuildContext context, Map<String, dynamic> userData) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Update Profile"),
-          content: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  initialValue: userData['username'],
-                  decoration: InputDecoration(labelText: "Username"),
-                  onSaved: (value) => _name = value,
-                  validator: (value) =>
-                  value == null || value.isEmpty ? "Username cannot be empty" : null,
-                ),
-              ],
-            ),
+        title: Text('Create Child Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.child_care),
+            tooltip: 'View Children',
+            onPressed: () {
+              // Navigate to the ViewChildList page
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ViewChildList()),
+              );
+            },
           ),
-          actions: [
-            TextButton(
-              child: Text("Cancel"),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton(
-              child: Text("Update"),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _formKey.currentState!.save();
-                  _updateProfile();
-                  Navigator.pop(context);
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
+        ],
+      ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: [
+              SizedBox(height: 16),
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Child\'s Name'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the child\'s name';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _ageController,
+                decoration: InputDecoration(labelText: 'Child\'s Age'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the child\'s age';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _levelController,
+                decoration: InputDecoration(labelText: 'Dyslexia Level'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the dyslexia level';
+                  }
+                  return null;
+                },
+              ),
+              TextFormField(
+                controller: _preferencesController,
+                decoration: InputDecoration(labelText: 'Learning Preferences'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter learning preferences';
+                  }
+                  return null;
+                },
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _createChildProfile,
+                child: Text('Create Profile'),
+              ),
+              SizedBox(height: 16),
 
-  // Update the username in Firestore
-  void _updateProfile() {
-    FirebaseFirestore.instance.collection('users').doc(widget.userId).update({
-      'username': _name,  // Only update the username
-    }).then((_) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Profile updated successfully!")),
-      );
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to update profile: $error")),
-      );
-    });
+
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
