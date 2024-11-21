@@ -1,3 +1,4 @@
+
 import 'package:dyslearn/Parent/ProgressReportPage.dart';
 import 'package:dyslearn/Parent/ViewChildList.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
+
 class ChildProfilePage extends StatefulWidget {
   @override
   _ChildProfilePageState createState() => _ChildProfilePageState();
@@ -18,6 +20,53 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
   final TextEditingController _preferencesController = TextEditingController();
   File? _imageFile; // For storing profile picture
   bool _isLoading = false;
+  String? _gameData;  // To store and display game data
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchGameData(); // Fetch game data when the profile is loaded
+  }
+
+  Future<void> _fetchGameData() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      return;
+    }
+
+    DocumentReference parentDoc = FirebaseFirestore.instance.collection('parents').doc(parent.uid);
+    CollectionReference children = parentDoc.collection('children');
+
+    try {
+      // Fetch all children under the parent
+      QuerySnapshot childSnapshot = await children.get();
+
+      for (var childDoc in childSnapshot.docs) {
+        String childId = childDoc.id; // Now this is dynamically fetched
+        print("Retrieved childId: $childId");
+
+        DocumentSnapshot child = await childDoc.reference.get();
+        if (child.exists) {
+          // Fetch gameData directly from the child’s collection
+          CollectionReference gameDataCollection = child.reference.collection('gameData');
+          QuerySnapshot gameDataSnapshot = await gameDataCollection.get();
+
+          if (gameDataSnapshot.docs.isNotEmpty) {
+            var gameData = gameDataSnapshot.docs[0].data() as Map<String, dynamic>?;
+            if (gameData != null) {
+              setState(() {
+                _gameData = gameData['lastScore']?.toString() ?? 'No score available';
+              });
+            }
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching game data: $e');
+    }
+  }
+
+
 
   Future<void> _createChildProfile() async {
     if (_formKey.currentState?.validate() ?? false) {
@@ -41,14 +90,13 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
 
       try {
         // Reference to the specific parent document
-        DocumentReference parentDoc =
-        FirebaseFirestore.instance.collection('parents').doc(parent.uid);
+        DocumentReference parentDoc = FirebaseFirestore.instance.collection('parents').doc(parent.uid);
 
         // Reference to Firestore subcollection 'children' under the parent
         CollectionReference children = parentDoc.collection('children');
 
-        // Prepare data to store in Firestore
-        await children.add({
+        // Prepare child profile data
+        DocumentReference childDoc = await children.add({
           'name': _nameController.text,
           'age': int.tryParse(_ageController.text) ?? 0,
           'level': _levelController.text,
@@ -56,6 +104,20 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
           'profilePic': _imageFile != null ? await _uploadProfilePic() : null,
           'createdAt': Timestamp.now(),
         });
+
+        // Create the gameData subcollection under this child's document
+        CollectionReference gameDataCollection = childDoc.collection('gameData');
+
+        // Prepare game data to store in Firestore
+        Map<String, dynamic> gameData = {
+          'lastScore': 0, // Set initial score or previous score if available
+          'totalScore': 0, // Set initial total score
+          'attempts': 0, // Set initial attempts
+          'lastUpdated': Timestamp.now(),
+        };
+
+        // Add gameData document to the 'gameData' subcollection
+        await gameDataCollection.add(gameData);
 
         // Clear fields after submission
         _nameController.clear();
@@ -77,11 +139,8 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
   }
 
   Future<String?> _uploadProfilePic() async {
-    // Code to upload image to Firebase Storage if needed
-    // Returns the URL of the uploaded image
     if (_imageFile == null) return null;
 
-    // Assuming Firebase Storage setup is done and a reference to a folder is available
     try {
       final storageReference = FirebaseStorage.instance
           .ref()
@@ -170,8 +229,8 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
                 child: Text('Create Profile'),
               ),
               SizedBox(height: 16),
-
-
+              if (_gameData != null)
+                Text('Last Game Score: $_gameData'),
             ],
           ),
         ),
@@ -179,3 +238,4 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
     );
   }
 }
+

@@ -1,5 +1,9 @@
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:confetti/confetti.dart';
+import 'package:dyslearn/Games/color_recognition_game/ColorMatchingGame.dart';
+import 'package:dyslearn/Games/color_recognition_game/game_over_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -36,11 +40,12 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   int? selectedIndex;
   int score = 0;
   late AudioPlayer _audioPlayer;
-  bool isHintActive = false; // Updated flag for active hint
+  bool isHintActive = false;
   late SharedPreferences prefs;
+  late FlutterTts flutterTts;
 
   List<bool> opening = List.generate(12, (index) => false);
-  late FlutterTts flutterTts; // TTS instance
+  final firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -49,14 +54,58 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     _audioPlayer = AudioPlayer();
     flutterTts = FlutterTts(); // Initialize TTS
     giftColors.shuffle();
-    _playBackgroundMusic();
+
     _initializePreferences();
+    fetchLastScore();  // Fetch the last score from Firestore when the game starts
   }
 
   void _initializePreferences() async {
     prefs = await SharedPreferences.getInstance();
-    score = prefs.getInt('lastScore') ?? 0;
+    score = 0; // Reset score on start
+    prefs.setInt('lastScore', score);
     setState(() {});
+  }
+
+  Future<void> fetchLastScore() async {
+    final doc = await firestore.collection('games').doc('Gift Matching').get();
+    if (doc.exists) {
+      setState(() {
+        score = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
+      });
+    }
+  }
+
+  Future<void> saveScoreToFirebase() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      String childId = childDoc.id;
+
+      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Gift Matching');
+      Map<String, dynamic> gameData = {
+        'lastScore': score,
+        'totalScore': FieldValue.increment(score),
+        'attempts': FieldValue.increment(1),
+        'lastUpdated': Timestamp.now(),
+      };
+
+      await gameDataCollection.add(gameData);
+      print("Score saved to Firebase successfully!");
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
   }
 
   @override
@@ -65,16 +114,6 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     _audioPlayer.dispose();
     flutterTts.stop(); // Stop TTS when disposing
     super.dispose();
-  }
-
-  void _playBackgroundMusic() async {
-    try {
-      await _audioPlayer.setSource(AssetSource('assets/audio/background_music.mp3'));
-      await _audioPlayer.setVolume(0.5);
-      await _audioPlayer.resume();
-    } catch (e) {
-      print("Error playing background music: $e");
-    }
   }
 
   bool _isAllMatched() {
@@ -121,6 +160,8 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
 
     if (_isAllMatched()) {
       prefs.setInt('lastScore', score);
+      saveScoreToFirebase();
+      _navigateToGameOverScreen();
     }
   }
 
@@ -160,6 +201,38 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     }
   }
 
+  void _navigateToGameOverScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameOverScreen(
+          score: score,
+          onPlayAgain: _resetGame,
+          onNextGame: _goToNextGame,
+        ),
+      ),
+    );
+  }
+
+  void _resetGame() {
+    setState(() {
+      score = 0;
+      matched = List.generate(12, (index) => false);
+      opening = List.generate(12, (index) => false);
+      giftColors.shuffle();
+    });
+    Navigator.pop(context);
+  }
+
+  void _goToNextGame() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ColorMatchingGame(),
+      ),
+    );
+  }
+
   void _speakColor(Color color) async {
     String colorName = '';
     if (color == Colors.red) colorName = 'Red';
@@ -196,126 +269,56 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
                       color: Colors.black.withOpacity(0.6),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      children: [
-                        Text(
-                          'Score: $score',
-                          style: TextStyle(
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Last Score: ${widget.lastScore ?? 0}',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      'Last Score: ${widget.lastScore ?? 0}',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.lightbulb_outline, color: Colors.yellow),
+                    onPressed: _useHint,
+                  ),
+                  GridView.builder(
+                    padding: EdgeInsets.all(12),
+                    shrinkWrap: true,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      childAspectRatio: 1,
+                    ),
+                    itemCount: giftColors.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () => _onGiftTap(index),
+                        child: AnimatedScale(
+                          scale: opening[index] ? 1.1 : 1.0,
+                          duration: Duration(milliseconds: 200),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: matched[index] ? Colors.transparent : giftColors[index],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.white, width: 2),
+                                ),
+                              ),
+                              if (!matched[index])
+                                Text(
+                                  '🎁',
+                                  style: TextStyle(fontSize: 32, color: Colors.white),
+                                ), // Gift icon
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
           ),
-          Positioned(
-            top: 40,
-            left: 20,
-            child: IconButton(
-              icon: Icon(Icons.lightbulb_sharp, color: Colors.yellow, size: 40),
-              onPressed: _useHint,
-            ),
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildGiftGrid(),
-            ],
-          ),
-          ConfettiWidget(
-            confettiController: _confettiController,
-            blastDirectionality: BlastDirectionality.explosive,
-            colors: [
-              Colors.red,
-              Colors.green,
-              Colors.blue,
-              Colors.purple,
-              Colors.orange,
-              Colors.yellow,
-            ],
-            shouldLoop: false,
-            numberOfParticles: 30,
-          ),
         ],
       ),
     );
-  }
-
-  Widget _buildGiftGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      padding: const EdgeInsets.all(20),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-      ),
-      itemCount: giftColors.length,
-      itemBuilder: (context, index) {
-        return GestureDetector(
-          onTap: () => _onGiftTap(index),
-          child: AnimatedScale(
-            scale: matched[index] ? 0.8 : 1.0,
-            duration: Duration(milliseconds: 200),
-            child: AnimatedOpacity(
-              opacity: opening[index] ? 0.0 : 1.0,
-              duration: Duration(milliseconds: 1200),
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 1200),
-                decoration: BoxDecoration(
-                  color: matched[index] ? Colors.transparent : giftColors[index],
-                  borderRadius: BorderRadius.circular(10),
-                  boxShadow: matched[index]
-                      ? []
-                      : [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 5,
-                      offset: Offset(2, 2),
-                    ),
-                  ],
-                ),
-                child: matched[index]
-                    ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      _getGiftImage(giftColors[index]),
-                      fit: BoxFit.cover,
-                    ),
-                    SizedBox(height: 10),
-                    Text('🎁', style: TextStyle(fontSize: 34)),
-                  ],
-                )
-                    : Center(child: Text('🎁', style: TextStyle(fontSize: 25))),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  String _getGiftImage(Color color) {
-    if (color == Colors.red) return 'assets/images/red_gift.png';
-    if (color == Colors.green) return 'assets/images/green_gift.png';
-    if (color == Colors.blue) return 'assets/images/blue_gift.png';
-    if (color == Colors.purple) return 'assets/images/purple_gift.png';
-    if (color == Colors.orange) return 'assets/images/orange_gift.png';
-    if (color == Colors.yellow) return 'assets/images/yellow_gift.png';
-    return '';
   }
 }

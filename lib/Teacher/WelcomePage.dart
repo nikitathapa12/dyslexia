@@ -25,33 +25,32 @@ class _TeacherWelcomePageState extends State<TeacherWelcomePage> with SingleTick
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Text(
-      //     'Welcome to Teacher Dashboard',
-      //     style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 24),
-      //   ),
-      //   backgroundColor: Colors.teal,
-      //   elevation: 0,
-      // ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.teal[100]!, Colors.teal[400]!],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          image: DecorationImage(
+            image: AssetImage('assets/images/homepge.gif'), // Add your background image here
+            fit: BoxFit.cover,
           ),
         ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _opacity, // Apply the animation here
-            child: Text(
-              'Welcome to Teacher Dashboard',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+        child: Container(
+          color: Colors.white.withOpacity(0.6), // To overlay a soft color over the image, improving text visibility
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(height: 10), // Add a small space above the text to move it upwards
+              FadeTransition(
+                opacity: _opacity, // Apply the animation here
+                child: Text(
+                  'Welcome to Teacher Dashboard',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2C3E50), // Soft blue color for text, more readable for dyslexic users
+                    fontFamily: 'OpenDyslexic', // Ensure dyslexic-friendly font
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

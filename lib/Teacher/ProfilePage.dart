@@ -1,6 +1,7 @@
 import 'package:dyslearn/Parent/SettingPage.dart';
 import 'package:dyslearn/Teacher/ChangePasswordPage.dart';
 import 'package:dyslearn/Teacher/EditProfilePage.dart';
+import 'package:dyslearn/home_page.dart';
 import 'package:dyslearn/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -11,11 +12,7 @@ class ProfilePage extends StatelessWidget {
     final User? user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Profile', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.teal.shade600,  // Elegant teal background
-        elevation: 4.0,
-      ),
+
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -176,8 +173,14 @@ class ProfilePage extends StatelessWidget {
     return ElevatedButton(
       onPressed: () {
         if (isLogout) {
+          // Sign out the user from Firebase
           FirebaseAuth.instance.signOut();
-          Navigator.pushReplacementNamed(context, '/login');
+
+          // Navigate to LoginPage (home or login page)
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()), // LoginPage
+          );
         } else {
           Navigator.push(
             context,
@@ -205,4 +208,5 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
+
 }

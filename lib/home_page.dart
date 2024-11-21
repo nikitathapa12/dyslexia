@@ -1,8 +1,7 @@
+import 'package:dyslearn/AboutPage.dart';
 import 'package:flutter/material.dart';
 import 'package:dyslearn/MenuPage.dart';
-import 'package:dyslearn/Parent/ForParentsPage.dart';
 import 'package:dyslearn/login_page.dart';
-import 'package:dyslearn/Parent/ParentLoginPage.dart'; // Make sure to import the ParentLoginPage
 
 class HomePage extends StatefulWidget {
   @override
@@ -170,7 +169,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => MenuPage(selectedChildName: '',)), // Navigate to ForParentsPage
+                      MaterialPageRoute(builder: (context) => MenuPage(selectedChildName: '',)), // Navigate to MenuPage
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -195,7 +194,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           ),
           // Google Play and Settings buttons
           Positioned(
-            bottom: 5, // Adjusted to allow space for the "For Parent" button
+            bottom: 5, // Adjusted to allow space for the Play button
             left: 10,
             child: IconButton(
               onPressed: () {
@@ -208,41 +207,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             ),
           ),
           Positioned(
-            bottom: 110, // Position the "For Parent" button below the Play button
-            left: 0,
-            right: 0,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => ParentLoginPage()), // Navigate to ParentLoginPage
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, // Use a distinct color for this button
-                padding: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 5,
-              ),
-              child: Text(
-                'For Parent',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
             bottom: 5,
             right: 20,
             child: IconButton(
-              onPressed: () {
-                // Open settings page
-              },
-              icon: Icon(Icons.settings, size: 50, color: Colors.black87),
+                onPressed: () {
+                  // Navigate to AboutPage when settings button is pressed
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => AboutPage()), // Navigate to AboutPage
+                  );
+                },
+                icon: Icon(Icons.settings, size: 50, color: Colors.black87),
             ),
           ),
         ],

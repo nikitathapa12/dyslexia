@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dyslearn/ViewAssignmentPage.dart';
+import 'package:dyslearn/Parent/UserService.dart'; // Correct import of UserService
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'ViewAssignmentPage.dart'; // Import the updated ViewAssignmentPage
 
 class AssignmentsPage extends StatelessWidget {
   final String parentId;
@@ -15,13 +16,46 @@ class AssignmentsPage extends StatelessWidget {
     required this.parentEmail,
   });
 
+  final UserService _userService = UserService();  // Initialize UserService
+
+  // Function to handle the submission of the assignment
+  Future<void> submitAssignment(String assignmentId, String answer) async {
+    try {
+      if (parentId.isEmpty || childId.isEmpty) {
+        print('Error: Parent ID or Child ID is empty');
+        return;  // Don't proceed if IDs are invalid
+      }
+
+      print('Submitting answer for Parent ID: $parentId, Child ID: $childId');
+
+      // Example: Save the answer to Firestore in a 'submissions' collection
+      await FirebaseFirestore.instance.collection('parents')
+          .doc(parentId)  // Use the correct parent ID
+          .collection('children')
+          .doc(childId)   // Use the correct child ID
+          .collection('submissions')
+          .add({
+        'childId': childId,
+        'parentId': parentId,
+        'assignmentId': assignmentId,  // Storing assignment ID as reference
+        'answer': answer,
+        'submittedAt': FieldValue.serverTimestamp(),
+      });
+
+      print("Answer submitted successfully");
+    } catch (e) {
+      print("Error submitting answer: $e");
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text('Assignments'),
       ),
-      body: StreamBuilder(
+      body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('assignments')
             .orderBy('createdAt', descending: true)
@@ -59,6 +93,9 @@ class AssignmentsPage extends StatelessWidget {
                           childId: childId,
                           childUsername: childUsername,
                           parentEmail: parentEmail,
+                          submitAssignment: (answer) {
+                            submitAssignment(assignment.id, answer);
+                          },  // Pass the submit function here with assignment ID
                         ),
                       ),
                     );

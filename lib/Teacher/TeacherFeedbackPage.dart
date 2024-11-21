@@ -11,13 +11,7 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Parent Feedback',
-          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 20),
-        ),
-        backgroundColor: Colors.teal,
-      ),
+
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('feedbacks') // Updated to correct collection name
@@ -34,12 +28,13 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
             return Center(
               child: Text(
                 'No feedback available yet.',
-                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 18),
               ),
             );
           }
 
           return ListView.builder(
+            padding: EdgeInsets.all(12),
             itemCount: feedbackDocs.length,
             itemBuilder: (context, index) {
               final feedback = feedbackDocs[index];
@@ -49,20 +44,58 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
               String? parentEmail = feedback['parentEmail'] ?? 'Unknown Parent'; // Fetch the parent email
               String? feedbackText = feedback['feedback'] ?? 'No feedback provided'; // Fetch the feedback text
 
-              return Card(
-                margin: EdgeInsets.all(8),
-                child: ListTile(
-                  title: Text(
-                    'Child: $childUsername',
-                    style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 18),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.teal[50], // Light teal background for the card
+                    borderRadius: BorderRadius.circular(12), // Rounded corners
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        offset: Offset(0, 4),
+                        blurRadius: 6,
+                      ),
+                    ],
                   ),
-                  subtitle: Text(
-                    feedbackText!,
-                    style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
-                  ),
-                  trailing: Text(
-                    'From: $parentEmail',
-                    style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Child: $childUsername',
+                          style: TextStyle(
+                            fontFamily: 'OpenDyslexic',
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal[700],
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          feedbackText!,
+                          style: TextStyle(
+                            fontFamily: 'OpenDyslexic',
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Align(
+                          alignment: Alignment.bottomRight,
+                          child: Text(
+                            'From: $parentEmail',
+                            style: TextStyle(
+                              fontFamily: 'OpenDyslexic',
+                              fontSize: 14,
+                              color: Colors.teal[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );

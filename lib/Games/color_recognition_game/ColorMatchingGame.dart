@@ -1,10 +1,13 @@
 import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:confetti/confetti.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:vibration/vibration.dart';
 import 'draggable_bag.dart';
 import 'kid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart'; // For navigation
 
 void main() => runApp(ColorMatchingGame());
 
@@ -66,18 +69,84 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
   int lastScore = 0;
   bool _showHint = false;
 
+  // Firebase Firestore instance
+  final firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: Duration(seconds: 1));
     _flutterTts.setLanguage("en-US");
     _flutterTts.speak("Welcome to the Color Matching Game! Match each kid with the correct color bag.");
+    fetchLastScore(); // Fetch the last score when the game starts
   }
 
   @override
   void dispose() {
     _confettiController.dispose();
     super.dispose();
+  }
+
+  // Fetch the last score from Firebase
+  Future<void> fetchLastScore() async {
+    final doc = await firestore.collection('games').doc('Color Matching').get();
+    if (doc.exists) {
+      setState(() {
+        lastScore = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
+      });
+    }
+  }
+
+  // Save the current score to Firebase
+  Future<void> saveScoreToFirebase() async {
+    // Get the currently logged-in parent's ID
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      // Access the parent's document
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+
+      // Retrieve the first child document in the 'children' subcollection
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      // Assuming you want to use the first child (or modify as needed)
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+
+      String childId = childDoc.id; // Extract the childId
+      print("Retrieved childId: $childId");
+
+      // Reference to the gameData subcollection under the child's document
+      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Color Matching');
+
+      // Prepare game data to store in Firestore
+      Map<String, dynamic> gameData = {
+        'lastScore': score,  // Current score
+        'totalScore': FieldValue.increment(score),  // Increment total score by the current score
+        'attempts': FieldValue.increment(1),  // Increment attempts by 1
+        'lastUpdated': Timestamp.now(),
+      };
+
+      // Add or update game data document in the 'gameData' subcollection
+      await gameDataCollection.add(gameData);
+
+      print("Score saved to Firebase successfully!");
+
+      // Navigate to the games page after saving score
+      Navigator.pushReplacement(
+        context,
+        CupertinoPageRoute(builder: (context) => GamePage()), // Assuming you have a GamesPage to navigate to
+      );
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
   }
 
   Future<void> _playSound(String sound) async {
@@ -109,6 +178,11 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
         _matchedBagImage[kidIndex] = goodyBagImages[kidIndex];
         score += 1;
       });
+
+      // If all kids have matched their bags, save score
+      if (!_kidHasBag.contains(false)) {
+        saveScoreToFirebase();
+      }
     } else {
       _playSound('incorrect.mp3');
       _speakText("Oops! Try again, that doesn't match!");
@@ -256,3 +330,5 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     );
   }
 }
+
+

@@ -36,6 +36,9 @@ dependencies:
   dropdown_button2: ^2.3.9
   dropdown_textfield: ^1.2.0
 
+  date_format: ^2.0.9
+  flutter_local_notifications: ^18.0.1
+
 
 
 

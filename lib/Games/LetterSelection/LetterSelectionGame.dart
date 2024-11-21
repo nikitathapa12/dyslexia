@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'NextWordGame.dart';
 
 class LetterSelectionGame extends StatefulWidget {
@@ -7,8 +9,7 @@ class LetterSelectionGame extends StatefulWidget {
   _LetterSelectionGameState createState() => _LetterSelectionGameState();
 }
 
-class _LetterSelectionGameState extends State<LetterSelectionGame>
-    with SingleTickerProviderStateMixin {
+class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTickerProviderStateMixin {
   final String word = "HELLO"; // The word to fill
   List<String> letters = ['E', 'H', 'O', 'L', 'L']; // Letters to drag
   late List<String?> filledLetters; // Track filled letters
@@ -19,6 +20,9 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
   int score = 0; // Current game score
   int lastScore = 0; // Last game score
 
+  // Firebase Firestore instance
+  final firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +32,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
       vsync: this,
     );
     _playBackgroundMusic(); // Play background music
+    fetchLastScore(); // Fetch the last score from Firestore
   }
 
   @override
@@ -35,6 +40,75 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
     _controller.dispose(); // Clean up the controller
     _audioPlayer.dispose(); // Dispose of audio player
     super.dispose();
+  }
+
+  // Fetch the last score from Firebase
+  Future<void> fetchLastScore() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return; // No user logged in
+
+    try {
+      DocumentSnapshot doc = await firestore
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('Letter Selection')
+          .doc('GameData')
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          lastScore = doc['lastScore'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching last score: $e");
+    }
+  }
+
+  // Save the current score to Firebase
+  Future<void> saveScoreToFirebase() async {
+    // Get the currently logged-in parent's ID
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      // Access the parent's document
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+
+      // Retrieve the first child document in the 'children' subcollection
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      // Assuming you want to use the first child (or modify as needed)
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+
+      String childId = childDoc.id; // Extract the childId
+      print("Retrieved childId: $childId");
+
+      // Reference to the gameData subcollection under the child's document
+      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Letter Selection');
+
+      // Prepare game data to store in Firestore
+      Map<String, dynamic> gameData = {
+        'lastScore': score,  // Current score
+        'totalScore': FieldValue.increment(score),  // Increment total score by the current score
+        'attempts': FieldValue.increment(1),  // Increment attempts by 1
+        'lastUpdated': Timestamp.now(),
+      };
+
+      // Add or update game data document in the 'gameData' subcollection
+      await gameDataCollection.add(gameData);
+
+      print("Score saved to Firebase successfully!");
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
   }
 
   // Play background music
@@ -54,7 +128,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
     setState(() {
       filledLetters[index] = letter;
       letters.remove(letter);
-      score += 0; // Increase score on correct drop
+      score += 1; // Increase score on correct drop
 
       // Play phonics sound for the dropped letter
       _playSound(letter.toLowerCase());
@@ -62,6 +136,8 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
       if (_isWordCompleted()) {
         _isCompleted = true;
         _controller.forward();
+
+        saveScoreToFirebase(); // Save score to Firestore
 
         Future.delayed(Duration(seconds: 1), () {
           _playSound('hello');
@@ -102,14 +178,6 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   title: Row(
-      //     mainAxisAlignment: MainAxisAlignment.start,
-      //     children: [
-      //       Text('Letter Selection Game', style: TextStyle(fontFamily: 'ChalkStyle')),
-      //     ],
-      //   ),
-      // ),
       body: Stack(
         children: [
           Positioned.fill(
@@ -164,7 +232,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
                       children: [
                         // Keep the word "HELLO" in place and do not move it
                         ...List.generate(word.length, (index) {
-                          return DragTarget<String>( // Target for each letter
+                          return DragTarget<String>(
                             builder: (context, candidateData, rejectedData) {
                               return AnimatedContainer(
                                 duration: Duration(milliseconds: 300),

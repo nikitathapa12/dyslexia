@@ -4,6 +4,7 @@ import 'package:dyslearn/Teacher/ProfilePage.dart';
 import 'package:dyslearn/Teacher/TeacherFeedbackPage.dart';
 import 'package:dyslearn/Teacher/ViewStudents.dart';
 import 'package:dyslearn/Teacher/WelcomePage.dart';
+import 'package:dyslearn/home_page.dart';
 import 'package:dyslearn/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -17,13 +18,12 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-
     TeacherWelcomePage(), // Welcome page
     TeacherAddAssignmentPage(), // Add Assignment
     StudentViewPage(), // View Students
     ProfilePage(), // Teacher Profile
     TeacherFeedbackPage(), // View Feedback
-    LoginPage(),
+    LoginPage(), // Login Page (used for other navigation if needed)
   ];
 
   void _onDrawerItemTap(int index) {
@@ -39,7 +39,11 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       appBar: AppBar(
         title: Text(
           'Teacher Dashboard',
-          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 24),
+          style: TextStyle(
+            fontFamily: 'OpenDyslexic',
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         backgroundColor: Colors.teal,
         elevation: 0,
@@ -151,8 +155,12 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       ),
       onTap: () {
         if (index == -1) {
-          // Handle Logout
-          Navigator.pop(context); // Close the drawer
+          // Handle Logout - Navigate to WelcomePage (home page)
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => HomePage()),
+                (Route<dynamic> route) => false, // Removes all previous routes
+          );
         } else {
           _onDrawerItemTap(index);
         }

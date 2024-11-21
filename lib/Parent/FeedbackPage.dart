@@ -109,75 +109,128 @@ class _FeedbackPageState extends State<FeedbackPage> {
       appBar: AppBar(
         title: Text(
           'Submit Feedback',
-          style: TextStyle(fontSize: 18),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'OpenDyslexic', // Use OpenDyslexic font here
+          ),
         ),
-        backgroundColor: Colors.blue,
+        backgroundColor: Colors.teal,
         centerTitle: true,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : Padding(
+          : Container(
+        decoration: BoxDecoration(
+          color: Color(0xFFE0F7FA), // Soft pastel blue background for dyslexic-friendly design
+        ),
         padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Dropdown for selecting the child's username
-            Text(
-              'Select Child\'s Username:',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: selectedUsername,
-              items: usernames
-                  .map((username) => DropdownMenuItem<String>(
-                value: username,
-                child: Text(username),
-              ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedUsername = value;
-                });
-              },
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(),
-              ),
-              hint: Text('Choose a child'),
-            ),
-            SizedBox(height: 16),
+        child: Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 600),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Select child's username
+                  Text(
+                    'Select Child\'s Username:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'OpenDyslexic',
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: selectedUsername,
+                    items: usernames
+                        .map((username) => DropdownMenuItem<String>(
+                      value: username,
+                      child: Text(
+                        username,
+                        style: TextStyle(fontSize: 16, fontFamily: 'OpenDyslexic'),
+                      ),
+                    ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedUsername = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.teal[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.teal[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      hintText: 'Choose a child',
+                      hintStyle: TextStyle(fontSize: 16, color: Colors.teal[400]),
+                    ),
+                  ),
+                  SizedBox(height: 16),
 
-            // Feedback text field
-            Text(
-              'Enter Feedback:',
-              style: TextStyle(fontSize: 16),
-            ),
-            SizedBox(height: 8),
-            TextField(
-              controller: _feedbackController,
-              maxLines: 5,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(),
-                hintText: 'Write your feedback here...',
-              ),
-            ),
-            SizedBox(height: 20),
+                  // Feedback text field
+                  Text(
+                    'Enter Feedback:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'OpenDyslexic',
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  TextField(
+                    controller: _feedbackController,
+                    maxLines: 5,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.teal[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.teal[300]!,
+                          width: 1,
+                        ),
+                      ),
+                      hintText: 'Write your feedback here...',
+                      hintStyle: TextStyle(color: Colors.teal[400]),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    ),
+                  ),
+                  SizedBox(height: 20),
 
-            // Submit button
-            Center(
-              child: ElevatedButton(
-                onPressed: _submitFeedback,
-                child: Text(
-                  'Submit Feedback',
-                  style: TextStyle(color: Colors.white),
-                ),
+                  // Submit button
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: _submitFeedback,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 32),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Submit Feedback',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'OpenDyslexic',
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

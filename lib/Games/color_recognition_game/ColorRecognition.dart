@@ -1,12 +1,13 @@
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dyslearn/Games/color_recognition_game/ColorGiftMatchingGame.dart';
-import 'package:dyslearn/Games/color_recognition_game/game_over_page.dart';
-import 'package:flutter/material.dart';
+
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
-
+import 'ColorGiftMatchingGame.dart';
+import 'game_over_page.dart';
 
 class ColorRecognitionGame extends StatefulWidget {
   @override
@@ -119,12 +120,52 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
   }
 
   Future<void> saveScoreToFirebase() async {
-    await firestore.collection('games').doc('colorRecognition').set({
-      'lastScore': score,  // Update lastScore
-      'totalScore': FieldValue.increment(score),  // Increment totalScore by the current score
-      'attempts': FieldValue.increment(1),  // Increment attempts by 1
-    }, SetOptions(merge: true)); // Use merge to update fields without overwriting the entire document
+    // Get the currently logged-in parent's ID
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      // Access the parent's document
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+
+      // Retrieve the first child document in the 'children' subcollection
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      // Assuming you want to use the first child (or modify as needed)
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+
+      String childId = childDoc.id; // Extract the childId
+      print("Retrieved childId: $childId");
+
+      // Reference to the gameData subcollection under the child's document
+      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Game Recognition');
+
+      // Prepare game data to store in Firestore
+      Map<String, dynamic> gameData = {
+        'lastScore': score,  // Current score
+        'totalScore': FieldValue.increment(score),  // Increment total score by the current score
+        'attempts': FieldValue.increment(1),  // Increment attempts by 1
+        'lastUpdated': Timestamp.now(),
+      };
+
+      // Add or update game data document in the 'gameData' subcollection
+      await gameDataCollection.add(gameData);
+
+      print("Score saved to Firebase successfully!");
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
   }
+
+
+
 
   void generateRandomFruit() {
     final random = Random();
@@ -136,7 +177,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
     setState(() {});
   }
 
-  void checkColor(Color selectedColor, int colorIndex) async {
+  Future<void> checkColor(Color selectedColor, int colorIndex) async {
     if (isGameOver) return;
 
     if (selectedColor == selectedFruitColor) {
@@ -153,11 +194,14 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
     } else {
       await _playSound('audio/incorrect.mp3');
       await _speak('Oops, try again.');
-      setState(() {
+      setState(() async {
         attempts++;
         if (attempts >= 3) {
           isGameOver = true;
-          saveScoreToFirebase(); // Save score when the game ends
+
+          // Dynamically retrieve and save the score
+          await saveScoreToFirebase();
+
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -172,6 +216,8 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
       });
     }
   }
+
+
 
   Future<void> _playSound(String soundFile) async {
     try {

@@ -1,6 +1,10 @@
+
 import 'package:dyslearn/Games/LetterSelection/BallWordGame.dart';
+import 'package:dyslearn/games.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MonkeyWordGame extends StatefulWidget {
   @override
@@ -19,6 +23,8 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
   int score = 0;
   int lastScore = 0;
 
+  final firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
@@ -28,15 +34,79 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
       vsync: this,
     );
     _playBackgroundMusic(); // Start background music
+    fetchLastScore(); // Fetch last score from Firebase
   }
 
   @override
   void dispose() {
     _controller.dispose(); // Clean up the controller
-    _audioPlayer.dispose(); // Dispose of audio player for sound effects
+    _audioPlayer.dispose(); // Dispose audio player for sound effects
     _backgroundMusicPlayer.stop(); // Stop background music
     _backgroundMusicPlayer.dispose(); // Dispose background music player
     super.dispose();
+  }
+
+  // Fetch the last score from Firebase
+  Future<void> fetchLastScore() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return; // No user logged in
+
+    try {
+      DocumentSnapshot doc = await firestore
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('Monkey Word Selection')
+          .doc('GameData')
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          lastScore = doc['lastScore'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching last score: $e");
+    }
+  }
+
+  // Save the current score to Firebase
+  Future<void> saveScoreToFirebase() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      String childId = childDoc.id;
+
+      CollectionReference gameDataCollection = parentDoc
+          .collection('children')
+          .doc(childId)
+          .collection('Monkey Word Selection');
+
+      Map<String, dynamic> gameData = {
+        'lastScore': score,
+        'totalScore': FieldValue.increment(score),
+        'attempts': FieldValue.increment(1),
+        'lastUpdated': Timestamp.now(),
+      };
+
+      await gameDataCollection.add(gameData);
+
+      print("Score saved to Firebase successfully!");
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
   }
 
   // Play background music
@@ -55,7 +125,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
     setState(() {
       filledLetters[index] = letter; // Fill the letter in the word
       letters.remove(letter); // Remove the letter from the pool
-      score += 0; // Increase score
+      score += 1; // Increase score
 
       // Play phonics sound for the dropped letter
       _playSound(letter.toLowerCase());
@@ -64,19 +134,21 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
         _isCompleted = true;
         _controller.forward(); // Start waving animation
 
-        // Wait for the last phonics sound to finish before playing "monkey" and navigating
+        saveScoreToFirebase(); // Save score to Firestore
+
+        // Wait for the last phonics sound to finish before playing "monkey"
         Future.delayed(Duration(seconds: 1), () {
           _playSound('monkey'); // Play the "monkey" sound after a short delay
 
           // Update scores
           setState(() {
             lastScore = score;
-            score += 1; // Increase score by 10 points when word is completed
+            score = 0;
           });
 
-          // Navigate to the ball game after a short delay
+          // After playing sound, navigate to the next word task
           Future.delayed(Duration(seconds: 2), () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => BallWordGame()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => GamesPage()));
           });
         });
       }
@@ -104,7 +176,6 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: Stack(
         children: [
           // Background container (GIF can be used here)
@@ -120,13 +191,12 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
           Positioned(
             top: 50,
             left: 0,
-            right: 10,
+            right: 0,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Scoreboard displaying score and last score
                   Column(
                     children: [
                       Text(
@@ -140,10 +210,9 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
                     ],
                   ),
                   SizedBox(width: 20),
-                  // Hint icon
                   IconButton(
-                    icon: Icon(Icons.lightbulb, color: Colors.yellow), // Hint icon
-                    onPressed: _useHint, // Use hint when clicked
+                    icon: Icon(Icons.lightbulb, color: Colors.yellow),
+                    onPressed: _useHint,
                   ),
                 ],
               ),
@@ -153,7 +222,6 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Display the word with hints and completion icons
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -172,20 +240,19 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
                           ),
                           child: Center(
                             child: Text(
-                              filledLetters[index] ?? word[index], // Show hint if empty
+                              filledLetters[index] ?? word[index],
                               style: TextStyle(fontSize: 24),
                             ),
                           ),
                         );
                       },
-                      onWillAccept: (data) => data == word[index], // Only accept if letter matches
-                      onAccept: (data) => _onLetterDropped(data, index), // Handle letter drop
+                      onWillAccept: (data) => data == word[index],
+                      onAccept: (data) => _onLetterDropped(data, index),
                     );
                   }),
                 ],
               ),
               SizedBox(height: 20),
-              // Display draggable letters
               Wrap(
                 spacing: 10,
                 children: letters.map((letter) {
@@ -193,12 +260,11 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
                     data: letter,
                     child: _buildLetterWidget(letter),
                     feedback: _buildLetterWidget(letter, isFeedback: true),
-                    childWhenDragging: _buildLetterWidget(letter, isFeedback: true), // Placeholder while dragging
+                    childWhenDragging: _buildLetterWidget(letter, isFeedback: true),
                   );
                 }).toList(),
               ),
               SizedBox(height: 30),
-              // Display waving icons if the word is completed
               if (_isCompleted) _buildWavingIcons(),
             ],
           ),
@@ -232,16 +298,17 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.tag_faces, size: 50, color: Colors.green), // Waving icon
+          Icon(Icons.tag_faces, size: 50, color: Colors.green),
           SizedBox(width: 10),
           Text(
             "MONKEY!",
             style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           SizedBox(width: 10),
-          Icon(Icons.tag_faces, size: 50, color: Colors.green), // Waving icon
+          Icon(Icons.tag_faces, size: 50, color: Colors.green),
         ],
       ),
     );
   }
 }
+

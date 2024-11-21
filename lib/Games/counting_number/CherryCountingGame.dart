@@ -1,7 +1,9 @@
 import 'dart:math';
-import 'package:dyslearn/Games/counting_number/CountingNumber.dart';
+import 'package:dyslearn/Games/counting_number/StarCountingGame.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CherryCountingGame extends StatefulWidget {
   @override
@@ -16,6 +18,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
   bool _isAnswered = false;
   bool _isCorrect = false;
   bool _showHint = false;
+  bool _hintUsed = false;
   String countdown = '';
   List<AnimationController> _bounceControllers = [];
   AudioPlayer _audioPlayer = AudioPlayer();
@@ -25,11 +28,11 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
   void initState() {
     super.initState();
     _generateNewRound();
-
     _scoreAnimationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 500),
     );
+    _loadLastScore(); // Load the last score on game start
   }
 
   @override
@@ -42,6 +45,90 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
     super.dispose();
   }
 
+  // Load the last score from Firestore
+  // Load the last score from Firestore
+  Future<void> _loadLastScore() async {
+    try {
+      User? parent = FirebaseAuth.instance.currentUser;
+      if (parent == null) {
+        print("No parent is logged in.");
+        return;
+      }
+
+      DocumentSnapshot parentDoc = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .get();
+
+      if (parentDoc.exists) {
+        QuerySnapshot childrenSnapshot = await FirebaseFirestore.instance
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .get();
+
+        if (childrenSnapshot.docs.isNotEmpty) {
+          String childId = childrenSnapshot.docs.first.id;
+
+          DocumentSnapshot gameDataDoc = await FirebaseFirestore.instance
+              .collection('parents')
+              .doc(parent.uid)
+              .collection('children')
+              .doc(childId)
+              .collection('Cherry Counting')
+              .doc('gameData')
+              .get();
+
+          if (gameDataDoc.exists) {
+            setState(() {
+              lastScore = gameDataDoc['lastScore'] ?? 0;
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print("Error loading last score: $e");
+    }
+  }
+
+  // Save the current score to Firestore
+  Future<void> saveScoreToFirebase() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      DocumentReference parentDoc = FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid);
+
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      String childId = childDoc.id;
+
+      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Cherry Counting');
+
+      Map<String, dynamic> gameData = {
+        'lastScore': score,
+        'totalScore': FieldValue.increment(score),
+        'attempts': FieldValue.increment(1),
+        'lastUpdated': Timestamp.now(),
+      };
+
+      await gameDataCollection.add(gameData);
+      print("Score saved to Firebase successfully!");
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
+  }
+
   void _generateNewRound() {
     setState(() {
       lastScore = score;
@@ -50,6 +137,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
       _isCorrect = false;
       countdown = '';
       _showHint = false;
+      _hintUsed = false;
       _initializeBounceControllers();
     });
   }
@@ -111,12 +199,13 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
     await _audioPlayer.play(AssetSource('audio/$number.mp3'));
   }
 
-  void _checkGameCompletion() {
+  void _checkGameCompletion() async {
     roundsPlayed++;
     if (roundsPlayed >= 2) {
+      saveScoreToFirebase();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => CountingGame()),
+        MaterialPageRoute(builder: (context) => StarCountingGame()),
       );
     } else {
       _generateNewRound();
@@ -261,90 +350,92 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
               child: Column(
                 children: [
                   Text(
-                    'Score: $score',
+                    'Score',
                     style: TextStyle(
-                      fontSize: 36,
+                      fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: Colors.yellow.shade300,
-                      fontFamily: 'OpenDyslexic',
-                      shadows: [
-                        Shadow(
-                          blurRadius: 4.0,
-                          color: Colors.black45,
-                          offset: Offset(2.0, 2.0),
-                        ),
-                      ],
+                      color: Colors.white,
                     ),
                   ),
+                  SizedBox(height: 10),
+                  Text(
+                    '$score',
+                    style: TextStyle(
+                      fontSize: 60,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                  SizedBox(height: 10),
                   Text(
                     'Last Score: $lastScore',
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.white70,
-                      fontFamily: 'OpenDyslexic',
+                      color: Colors.white,
                     ),
                   ),
-                  if (_showHint)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        'Hint: The correct number is $correctNumber!',
-                        style: TextStyle(color: Colors.yellowAccent, fontSize: 18),
-                      ),
-                    ),
                 ],
               ),
             );
           },
         ),
-        SizedBox(width: 10),
-        IconButton(
-          icon: Icon(Icons.lightbulb_outline, color: Colors.blue),
-          onPressed: _showHint ? null : _showHintMessage,
-          tooltip: 'Hint',
-        ),
       ],
     );
   }
 
+  Widget _buildHintIcon() {
+    return GestureDetector(
+      onTap: _showHintMessage,
+      child: Icon(
+        Icons.lightbulb,
+        color: _showHint ? Colors.yellow : Colors.yellow,
+        size: 35,
+      ),
+    );
+  }
+
+  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.deepPurpleAccent,
       appBar: AppBar(
-        title: Text(
-          'Cherry Counting Game',
-          style: TextStyle(fontFamily: 'OpenDyslexic'),
-        ),
-        backgroundColor: Colors.deepPurple.shade300,
-      ),
-      body: Container(
-        height: MediaQuery.of(context).size.height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple.shade700, Colors.brown.shade200],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+        backgroundColor: Colors.deepPurpleAccent,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Display Score and Last Score
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildScore(),
-                SizedBox(height: 20),
-                _buildCherries(),
-                SizedBox(height: 10),
-                _buildOptions(),
-                SizedBox(height: 20),
-                _buildFeedback(),
-                SizedBox(height: 10),
-                _buildCountdown(),
+                Text(
+                  'Score: $score',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  'Last Score: $lastScore',
+                  style: TextStyle(fontSize: 20, color: Colors.white70),
+                ),
               ],
             ),
-          ),
+            // Hint Icon
+            _buildHintIcon(),
+          ],
+        ),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildCherries(),
+            SizedBox(height: 20),
+            _buildOptions(),
+            _buildFeedback(),
+            _buildCountdown(),
+          ],
         ),
       ),
     );
   }
+
 }

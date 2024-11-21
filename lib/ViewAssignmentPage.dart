@@ -1,14 +1,22 @@
-import 'dart:io'; // For handling files
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Firebase storage package
-import 'MenuPage.dart';
 
 class ViewAssignmentPage extends StatefulWidget {
-  final String assignmentId; // Declare assignmentId here
+  final String assignmentId;
+  final String parentEmail;
+  final String childUsername;
+  final String childId;
+  final String parentId;
+  final Function(String) submitAssignment; // Single argument (answer)
 
-  // Constructor to accept assignmentId as a parameter
-  ViewAssignmentPage({required this.assignmentId, required String parentEmail, required String childUsername, required String childId, required String parentId});
+  ViewAssignmentPage({
+    required this.assignmentId,
+    required this.parentEmail,
+    required this.childUsername,
+    required this.childId,
+    required this.parentId,
+    required this.submitAssignment,  // Pass submitAssignment function
+  });
 
   @override
   _ViewAssignmentPageState createState() => _ViewAssignmentPageState();
@@ -30,12 +38,11 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
     fetchAssignmentData();
   }
 
-  // Fetch assignment data from Firestore using assignmentId
   Future<void> fetchAssignmentData() async {
     try {
       DocumentSnapshot snapshot = await FirebaseFirestore.instance
           .collection('assignments')
-          .doc(widget.assignmentId) // Use widget.assignmentId here
+          .doc(widget.assignmentId)
           .get();
 
       setState(() {
@@ -46,7 +53,6 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
         imageUrl = snapshot['imageUrl'] ?? '';
         audioUrl = snapshot['audioUrl'] ?? '';
 
-        // Add a controller for each answer field dynamically
         answerControllers['answer'] = TextEditingController();
       });
     } catch (e) {
@@ -54,18 +60,11 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
     }
   }
 
-  // Submit the child's answers
   Future<void> submitAssignment() async {
     try {
-      final Map<String, dynamic> submittedData = {
-        'assignmentId': widget.assignmentId, // Use widget.assignmentId here
-        'answer': answerControllers['answer']!.text,
-        'submittedAt': Timestamp.now(),
-      };
+      final answer = answerControllers['answer']!.text;
+      widget.submitAssignment(answer);  // Call the passed function to submit answer
 
-      await FirebaseFirestore.instance.collection('submissions').add(submittedData);
-
-      // Show a confirmation message
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Assignment Submitted!')));
     } catch (e) {
       print("Error submitting assignment: $e");
@@ -89,12 +88,10 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
               Text(description),
               SizedBox(height: 20),
 
-              // Display image if available
               if (imageUrl.isNotEmpty)
                 Image.network(imageUrl),
               SizedBox(height: 20),
 
-              // Display audio if available
               if (audioUrl.isNotEmpty)
                 IconButton(
                   icon: Icon(Icons.play_arrow),
@@ -104,7 +101,6 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
                 ),
               SizedBox(height: 20),
 
-              // TextField for answers
               TextField(
                 controller: answerControllers['answer'],
                 decoration: InputDecoration(labelText: 'Enter your answer'),

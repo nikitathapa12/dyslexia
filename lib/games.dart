@@ -57,7 +57,7 @@ class GamesPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CountingGame()),
+                  MaterialPageRoute(builder: (context) => CherryCountingGame()),
                 );
               },
             ),

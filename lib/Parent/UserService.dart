@@ -3,89 +3,119 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Method to add or update game data for a specific child
-  Future<void> addGamePlayed({
-    required String parentId,
+  // Add game progress to the individual child's gameProgress collection
+  Future<void> addGameProgress({
     required String childId,
     required String gameName,
     required int lastScore,
+    required int totalScore,
+    required int attempts,
   }) async {
     try {
-      // Reference to the parents collection
-      DocumentReference parentDoc = _firestore.collection('parents').doc(parentId);
+      // Reference to the gameProgress collection of the specific child
+      DocumentReference progressDoc = _firestore
+          .collection('children')  // Directly under 'children' collection
+          .doc(childId)
+          .collection('gameProgress')  // Game progress collection for each child
+          .doc(gameName);  // Use the game name as the document ID
 
-      // Reference to the games collection under parent
-      DocumentReference gameDoc = parentDoc
-          .collection('games')
-          .doc(gameName)  // Use the game name as a document ID
-          .collection('gameData')
-          .doc(childId);  // Use the childId as the document ID in the gameData collection
-
-      // Fetch existing game data if it exists
-      DocumentSnapshot snapshot = await gameDoc.get();
-
-      if (snapshot.exists) {
-        // If game data exists, update it
-        Map<String, dynamic> existingData = snapshot.data() as Map<String, dynamic>;
-
-        int updatedTotalScore = existingData['totalScore'] + lastScore;
-        int updatedAttempts = existingData['attempts'] + 1;
-
-        // Update the document with new values
-        await gameDoc.update({
-          'lastScore': lastScore,
-          'totalScore': updatedTotalScore,
-          'attempts': updatedAttempts,
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        print('Game data updated for child: $childId');
-      } else {
-        // If game data does not exist, create a new document
-        await gameDoc.set({
-          'childId': childId,
-          'gameName': gameName,
-          'lastScore': lastScore,
-          'totalScore': lastScore,  // Set totalScore to lastScore initially
-          'attempts': 1,  // Set initial attempts to 1
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        print('New game data added for child: $childId');
-      }
+      // Set or update the progress for this game
+      await progressDoc.set({
+        'lastScore': lastScore,
+        'totalScore': totalScore,
+        'attempts': attempts,
+        'lastUpdated': Timestamp.now(),
+      });
+      print('Game progress saved successfully');
     } catch (e) {
-      print('Error updating game data for child $childId: $e');
-      throw e;
+      print('Error saving game progress: $e');
     }
   }
 
-  // Method to fetch game data for a specific child
-  Future<Map<String, dynamic>?> fetchGameData({
-    required String parentId,
+  // Fetch game progress for a specific child
+  Future<List<Map<String, dynamic>>> fetchChildProgress({
     required String childId,
-    required String gameName,
   }) async {
     try {
-      DocumentReference gameDoc = _firestore
-          .collection('parents')
-          .doc(parentId)
-          .collection('games')
-          .doc(gameName)
-          .collection('gameData')
-          .doc(childId);
+      // Reference to the gameProgress collection of the specific child
+      QuerySnapshot snapshot = await _firestore
+          .collection('children')  // Directly under 'children' collection
+          .doc(childId)
+          .collection('gameProgress')  // Game progress collection
+          .get();
 
-      DocumentSnapshot snapshot = await gameDoc.get();
+      List<Map<String, dynamic>> progressData = snapshot.docs.map((doc) {
+        return {
+          'gameName': doc.id, // Game name is the document ID
+          'lastScore': doc['lastScore'],
+          'totalScore': doc['totalScore'],
+          'attempts': doc['attempts'],
+        };
+      }).toList();
 
-      if (snapshot.exists) {
-        return snapshot.data() as Map<String, dynamic>;
-      } else {
-        print('No game data found for child $childId in game $gameName');
-        return null;
-      }
+      return progressData;
     } catch (e) {
-      print('Error fetching game data: $e');
-      throw e;
+      print('Error fetching progress data: $e');
+      return [];
     }
   }
 
-  fetchChildProgress({required String parentId, required String childId}) {}
+
+
+
+
+
+
+
+  // Add assignment submission to the individual child's assignments collection
+  Future<void> addAssignmentSubmission({
+    required String childId,
+    required String assignmentId,
+    required String answer,
+  }) async {
+    try {
+      // Reference to the assignmentSubmissions collection of the specific child
+      DocumentReference submissionDoc = _firestore
+          .collection('children') // Directly under 'children' collection
+          .doc(childId) // Specific child document
+          .collection('assignments') // Subcollection for assignments
+          .doc(assignmentId); // Use the assignmentId as the document ID
+
+      // Set or update the assignment submission for this child
+      await submissionDoc.set({
+        'answer': answer,
+        'submittedAt': Timestamp.now(),
+      });
+      print('Assignment submission saved successfully');
+    } catch (e) {
+      print('Error saving assignment submission: $e');
+    }
+  }
+
+  // Fetch assignment submissions for a specific child
+  Future<List<Map<String, dynamic>>> fetchChildAssignments({
+    required String childId,
+  }) async {
+    try {
+      // Reference to the assignmentSubmissions collection of the specific child
+      QuerySnapshot snapshot = await _firestore
+          .collection('children') // Directly under 'children' collection
+          .doc(childId) // Specific child document
+          .collection('assignments') // Subcollection for assignments
+          .get();
+
+      List<Map<String, dynamic>> assignmentData = snapshot.docs.map((doc) {
+        return {
+          'assignmentId': doc.id, // Assignment ID is the document ID
+          'answer': doc['answer'],
+          'submittedAt': doc['submittedAt'],
+        };
+      }).toList();
+
+      return assignmentData;
+    } catch (e) {
+      print('Error fetching assignment data: $e');
+      return [];
+    }
+  }
 }

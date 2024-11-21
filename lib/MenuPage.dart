@@ -1,6 +1,9 @@
+import 'package:dyslearn/EditChildProfile.dart';
+import 'package:dyslearn/NotificationsPage.dart';
 import 'package:dyslearn/Parent/FeedbackPage.dart';
 import 'package:dyslearn/Parent/ParentLoginPage.dart';
 import 'package:dyslearn/Parent/ProgressReportPage.dart';
+import 'package:dyslearn/home_page.dart';
 import 'package:dyslearn/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,12 +21,14 @@ class MenuPage extends StatefulWidget {
 }
 
 class _MenuPageState extends State<MenuPage> {
-  String _userEmail = ''; // Initially empty, to be filled after fetching from Firebase
+  String _userEmail = '';
+  Map<String, dynamic> childData = {}; // To store child data fetched from Firestore
 
   @override
   void initState() {
     super.initState();
     _loadUserEmail();
+    _loadChildData();
   }
 
   // Method to fetch user email from Firebase
@@ -33,6 +38,30 @@ class _MenuPageState extends State<MenuPage> {
       setState(() {
         _userEmail = user.email ?? 'No email available';
       });
+    }
+  }
+
+  // Method to fetch child data from Firestore based on selectedChildName
+  Future<void> _loadChildData() async {
+    try {
+      if (widget.selectedChildName.isEmpty) {
+        throw Exception("Child name is empty");
+      }
+
+      var querySnapshot = await FirebaseFirestore.instance
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        setState(() {
+          childData = querySnapshot.docs.first.data();
+        });
+      } else {
+        print('No child found with name: ${widget.selectedChildName}');
+      }
+    } catch (e) {
+      print('Error loading child data: $e');
     }
   }
 
@@ -60,52 +89,32 @@ class _MenuPageState extends State<MenuPage> {
         backgroundColor: Colors.teal,
         elevation: 0,
         actions: [
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('notifications')
-                .where('read', isEqualTo: false)
-                .snapshots(),
-            builder: (context, snapshot) {
-              int unreadCount =
-              snapshot.hasData ? snapshot.data!.docs.length : 0;
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.notifications),
-                    onPressed: () {
-                      _showNotificationDialog(context);
-                    },
-                  ),
-                  if (unreadCount > 0)
-                    Positioned(
-                      right: 11,
-                      top: 11,
-                      child: Container(
-                        padding: EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 18,
-                          minHeight: 18,
-                        ),
-                        child: Text(
-                          '$unreadCount',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
+          IconButton(
+            icon: Icon(Icons.home),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => HomePage(),
+                ),
               );
             },
           ),
+          IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => NotificationsPage(), // Navigate to your NotificationsPage
+                ),
+              );
+            },
+          ),
+
+
+
+
         ],
       ),
       drawer: _buildDrawer(context),
@@ -164,6 +173,7 @@ class _MenuPageState extends State<MenuPage> {
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
+
                       ],
                     ),
                   ],
@@ -178,7 +188,9 @@ class _MenuPageState extends State<MenuPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProgressReportPage(childId: '',),
+                  builder: (context) => ProgressReportPage(
+                    selectedChildName: widget.selectedChildName,
+                  ),
                 ),
               );
             },
@@ -195,6 +207,19 @@ class _MenuPageState extends State<MenuPage> {
               );
             },
           ),
+
+          // _buildDrawerItem(
+          //   context: context,
+          //   title: 'Edit Profile',
+          //   onTap: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(
+          //         builder: (context) => EditChildProfile(childName: '',),
+          //       ),
+          //     );
+          //   },
+          // ),
           _buildDrawerItem(
             context: context,
             title: 'Send Feedback to Teachers',
@@ -265,18 +290,20 @@ class _MenuPageState extends State<MenuPage> {
               subtitle: 'View your assignments',
               color: Colors.amber,
               onTap: () {
+                print('Navigating with: parentId=${childData['parentId']}, childId=${childData['childId']}');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => AssignmentsPage(
-                      parentId: '',
-                      childId: '',
-                      childUsername: '',
-                      parentEmail: '',
+                      parentId: childData['parentId'] ?? '',
+                      childId: childData['childId'] ?? '',
+                      childUsername: widget.selectedChildName,
+                      parentEmail: _userEmail,
                     ),
                   ),
                 );
               },
+
             ),
           ],
         ),
@@ -314,37 +341,35 @@ class _MenuPageState extends State<MenuPage> {
               ),
             ),
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Row(
+              padding: const EdgeInsets.all(15.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(icon, size: 60, color: Colors.white),
-                  SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontFamily: 'OpenDyslexic',
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          subtitle,
-                          style: TextStyle(
-                            fontFamily: 'OpenDyslexic',
-                            fontSize: 16,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
+                  Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 60,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'OpenDyslexic',
                     ),
                   ),
-                  Icon(Icons.arrow_forward_ios, size: 30, color: Colors.white),
+                  SizedBox(height: 5),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                      fontFamily: 'OpenDyslexic',
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
@@ -362,7 +387,7 @@ class _MenuPageState extends State<MenuPage> {
     return ListTile(
       title: Text(
         title,
-        style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 18),
+        style: TextStyle(fontSize: 18, fontFamily: 'OpenDyslexic'),
       ),
       onTap: onTap,
     );

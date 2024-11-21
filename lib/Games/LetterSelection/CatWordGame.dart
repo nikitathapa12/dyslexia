@@ -1,6 +1,8 @@
 import 'package:dyslearn/Games/LetterSelection/MonkeyWordGame.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CatWordGame extends StatefulWidget {
   @override
@@ -19,6 +21,8 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   int score = 0;
   int lastScore = 0;
 
+  final firestore = FirebaseFirestore.instance;
+
   @override
   void initState() {
     super.initState();
@@ -28,21 +32,83 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       vsync: this,
     );
     _playBackgroundMusic(); // Start background music
+    fetchLastScore(); // Fetch the last score from Firestore
   }
 
   @override
   void dispose() {
     _controller.dispose(); // Clean up the controller
     _audioPlayer.dispose(); // Dispose of audio player for sound effects
-
+    _backgroundMusicPlayer.dispose(); // Dispose background music
     super.dispose();
+  }
+
+  // Fetch the last score from Firebase
+  Future<void> fetchLastScore() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return; // No user logged in
+
+    try {
+      DocumentSnapshot doc = await firestore
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('Cat Word Game')
+          .doc('GameData')
+          .get();
+
+      if (doc.exists) {
+        setState(() {
+          lastScore = doc['lastScore'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching last score: $e");
+    }
+  }
+
+  // Save the current score to Firebase
+  Future<void> saveScoreToFirebase() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
+    try {
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
+        return;
+      }
+
+      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      String childId = childDoc.id;
+
+      CollectionReference gameDataCollection = parentDoc
+          .collection('children')
+          .doc(childId)
+          .collection('Cat Word Game');
+
+      Map<String, dynamic> gameData = {
+        'lastScore': score,
+        'totalScore': FieldValue.increment(score),
+        'attempts': FieldValue.increment(1),
+        'lastUpdated': Timestamp.now(),
+      };
+
+      await gameDataCollection.add(gameData);
+
+      print("Score saved to Firebase successfully!");
+    } catch (e) {
+      print("Error saving score to Firebase: $e");
+    }
   }
 
   // Play background music
   Future<void> _playBackgroundMusic() async {
     await _backgroundMusicPlayer.play(AssetSource('audio/background_music.mp3'), volume: 0.5);
-    await _audioPlayer.setVolume(0.5);
-    await _audioPlayer.resume();
   }
 
   // Play letter sound (phonics) or word sound
@@ -55,7 +121,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
     setState(() {
       filledLetters[index] = letter; // Fill the letter in the word
       letters.remove(letter); // Remove the letter from the pool
-      score+=1;
+      score += 1;
 
       // Play phonics sound for the dropped letter
       _playSound(letter.toLowerCase());
@@ -64,6 +130,8 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
         _isCompleted = true;
         _controller.forward(); // Start waving animation
 
+        saveScoreToFirebase(); // Save score to Firestore
+
         // Wait for the last phonics sound to finish before playing "cat"
         Future.delayed(Duration(seconds: 1), () {
           _playSound('cat'); // Play the "cat" sound after a short delay
@@ -71,7 +139,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
           // Update scores
           setState(() {
             lastScore = score;
-            score += 0; // Increase score by 10 points when word is completed
+            score = 0;
           });
 
           // After playing sound, navigate to the next word task
@@ -133,7 +201,6 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Scoreboard displaying score and last score
                   Column(
                     children: [
                       Text(
@@ -147,10 +214,9 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
                     ],
                   ),
                   SizedBox(width: 20),
-                  // Hint icon
                   IconButton(
-                    icon: Icon(Icons.lightbulb, color: Colors.yellow), // Hint icon
-                    onPressed: _useHint, // Use hint when clicked
+                    icon: Icon(Icons.lightbulb, color: Colors.yellow),
+                    onPressed: _useHint,
                   ),
                 ],
               ),
@@ -160,7 +226,6 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Display the word with hints and completion icons
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -179,20 +244,19 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
                           ),
                           child: Center(
                             child: Text(
-                              filledLetters[index] ?? word[index], // Show hint if empty
+                              filledLetters[index] ?? word[index],
                               style: TextStyle(fontSize: 24),
                             ),
                           ),
                         );
                       },
-                      onWillAccept: (data) => data == word[index], // Only accept if letter matches
-                      onAccept: (data) => _onLetterDropped(data, index), // Handle letter drop
+                      onWillAccept: (data) => data == word[index],
+                      onAccept: (data) => _onLetterDropped(data, index),
                     );
                   }),
                 ],
               ),
               SizedBox(height: 20),
-              // Display draggable letters
               Wrap(
                 spacing: 10,
                 children: letters.map((letter) {
@@ -200,13 +264,11 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
                     data: letter,
                     child: _buildLetterWidget(letter),
                     feedback: _buildLetterWidget(letter, isFeedback: true),
-                    childWhenDragging: _buildLetterWidget(letter, isFeedback: true), // Placeholder while dragging
-
+                    childWhenDragging: _buildLetterWidget(letter, isFeedback: true),
                   );
                 }).toList(),
               ),
               SizedBox(height: 30),
-              // Display waving icons if the word is completed
               if (_isCompleted) _buildWavingIcons(),
             ],
           ),
@@ -240,14 +302,14 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.tag_faces, size: 50, color: Colors.green), // Waving icon
+          Icon(Icons.tag_faces, size: 50, color: Colors.green),
           SizedBox(width: 10),
           Text(
             "CAT!",
             style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.green),
           ),
           SizedBox(width: 10),
-          Icon(Icons.tag_faces, size: 50, color: Colors.green), // Waving icon
+          Icon(Icons.tag_faces, size: 50, color: Colors.green),
         ],
       ),
     );
