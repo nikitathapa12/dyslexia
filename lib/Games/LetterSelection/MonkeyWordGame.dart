@@ -148,7 +148,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
 
           // After playing sound, navigate to the next word task
           Future.delayed(Duration(seconds: 2), () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => GamesPage()));
+            Navigator.push(context, MaterialPageRoute(builder: (context) => GamesPage(selectedChildName: "",)));
           });
         });
       }

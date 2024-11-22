@@ -78,7 +78,7 @@ class UserService {
       DocumentReference submissionDoc = _firestore
           .collection('children') // Directly under 'children' collection
           .doc(childId) // Specific child document
-          .collection('assignments') // Subcollection for assignments
+          .collection('submisssions') // Subcollection for assignments
           .doc(assignmentId); // Use the assignmentId as the document ID
 
       // Set or update the assignment submission for this child

@@ -10,6 +10,9 @@ import 'ColorGiftMatchingGame.dart';
 import 'game_over_page.dart';
 
 class ColorRecognitionGame extends StatefulWidget {
+  final String? selectedChildName;
+
+  ColorRecognitionGame({this.selectedChildName});
   @override
   _ColorRecognitionGameState createState() => _ColorRecognitionGameState();
 }
@@ -139,14 +142,23 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
       }
 
       // Assuming you want to use the first child (or modify as needed)
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      print("child name: ");
+      print(widget.selectedChildName);
 
-      String childId = childDoc.id; // Extract the childId
-      print("Retrieved childId: $childId");
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
+
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
 
       // Reference to the gameData subcollection under the child's document
       CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Game Recognition');
-
+      print("childId: $childId");
       // Prepare game data to store in Firestore
       Map<String, dynamic> gameData = {
         'lastScore': score,  // Current score
@@ -154,7 +166,8 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
         'attempts': FieldValue.increment(1),  // Increment attempts by 1
         'lastUpdated': Timestamp.now(),
       };
-
+      print("sent data: ");
+      print(gameData.entries);
       // Add or update game data document in the 'gameData' subcollection
       await gameDataCollection.add(gameData);
 

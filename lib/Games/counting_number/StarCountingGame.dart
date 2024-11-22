@@ -129,7 +129,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   void _generateNewRound() {
     if (roundsPlayed >= 5) {
       _saveScoreToFirebase(); // Save the final score
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GamesPage()));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GamesPage(selectedChildName: "",)));
       return;
     }
 

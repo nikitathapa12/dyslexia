@@ -22,12 +22,12 @@ class MenuPage extends StatefulWidget {
 
 class _MenuPageState extends State<MenuPage> {
   String _userEmail = '';
+  String _parentId = '';
   Map<String, dynamic> childData = {}; // To store child data fetched from Firestore
 
   @override
   void initState() {
     super.initState();
-    _loadUserEmail();
     _loadChildData();
   }
 
@@ -37,27 +37,36 @@ class _MenuPageState extends State<MenuPage> {
     if (user != null) {
       setState(() {
         _userEmail = user.email ?? 'No email available';
+        _parentId = user.uid ?? "";
       });
     }
   }
 
   // Method to fetch child data from Firestore based on selectedChildName
   Future<void> _loadChildData() async {
+    await _loadUserEmail();
     try {
       if (widget.selectedChildName.isEmpty) {
         throw Exception("Child name is empty");
       }
 
-      var querySnapshot = await FirebaseFirestore.instance
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(_parentId)
           .collection('children')
-          .where('name', isEqualTo: widget.selectedChildName)
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
           .get();
 
+      print("_parentId: $_parentId");
+      // for  {
+      //
+      // }
       if (querySnapshot.docs.isNotEmpty) {
         setState(() {
           childData = querySnapshot.docs.first.data();
         });
       } else {
+        print("reached here");
         print('No child found with name: ${widget.selectedChildName}');
       }
     } catch (e) {
@@ -278,7 +287,7 @@ class _MenuPageState extends State<MenuPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GamesPage()),
+                  MaterialPageRoute(builder: (context) => GamesPage(selectedChildName: widget.selectedChildName)),
                 );
               },
             ),

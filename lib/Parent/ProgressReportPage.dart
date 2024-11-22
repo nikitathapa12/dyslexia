@@ -32,9 +32,20 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   }
 
   Future<void> fetchChildData() async {
+    print("fetchChildData function called");
     try {
       final parentDoc = await FirebaseFirestore.instance.collection('parents').doc(parentId).get();
-      if (parentDoc.exists) {
+      // final documents = await FirebaseFirestore.instance.collection('parents').get();
+      // print("documents: ");
+      // for (var doc in documents.docs) {
+      //   print(doc.id); // Access the document ID
+      // }
+      //
+      // print("parentDocs: ");
+      // print(parentDoc.id); // Access the document ID
+      //
+      // print("doc exists: " + parentDoc.exists.toString());
+      // if (parentDoc.exists) {
         final childDocs = await FirebaseFirestore.instance
             .collection('parents')
             .doc(parentId)
@@ -48,9 +59,11 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           print("Child ID: $childId");
           await fetchProgressData();
         } else {
-          print("No child found with name: ${widget.selectedChildName}");
+          print("child lists fetched");
+          print(childDocs);
+          print("alert: No child found with name: ${widget.selectedChildName}");
         }
-      }
+      // }
     } catch (e) {
       print("Error fetching child data: $e");
     }

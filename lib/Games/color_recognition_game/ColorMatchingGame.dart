@@ -90,7 +90,10 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
   // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
     final doc = await firestore.collection('games').doc('Color Matching').get();
+    print("fetching last score");
     if (doc.exists) {
+      print("last score document found");
+      print(doc);
       setState(() {
         lastScore = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
       });

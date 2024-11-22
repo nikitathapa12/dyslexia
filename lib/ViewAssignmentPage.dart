@@ -7,7 +7,7 @@ class ViewAssignmentPage extends StatefulWidget {
   final String childUsername;
   final String childId;
   final String parentId;
-  final Function(String) submitAssignment; // Single argument (answer)
+  final Function(String, String, String, String) submitAssignment; // Single argument (answer)
 
   ViewAssignmentPage({
     required this.assignmentId,
@@ -63,7 +63,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
   Future<void> submitAssignment() async {
     try {
       final answer = answerControllers['answer']!.text;
-      widget.submitAssignment(answer);  // Call the passed function to submit answer
+      widget.submitAssignment(widget.parentId, widget.childId, widget.assignmentId, answer);  // Call the passed function to submit answer
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Assignment Submitted!')));
     } catch (e) {

@@ -19,8 +19,10 @@ class AssignmentsPage extends StatelessWidget {
   final UserService _userService = UserService();  // Initialize UserService
 
   // Function to handle the submission of the assignment
-  Future<void> submitAssignment(String assignmentId, String answer) async {
+  Future<void> submitAssignment(String parentId, String childId, String assignmentId, String answer) async {
+    print("submitting the assignment");
     try {
+      print("parent: $parentId, child: $childId");
       if (parentId.isEmpty || childId.isEmpty) {
         print('Error: Parent ID or Child ID is empty');
         return;  // Don't proceed if IDs are invalid
@@ -29,19 +31,20 @@ class AssignmentsPage extends StatelessWidget {
       print('Submitting answer for Parent ID: $parentId, Child ID: $childId');
 
       // Example: Save the answer to Firestore in a 'submissions' collection
-      await FirebaseFirestore.instance.collection('parents')
+      var submissions = await FirebaseFirestore.instance.collection('parents')
           .doc(parentId)  // Use the correct parent ID
           .collection('children')
           .doc(childId)   // Use the correct child ID
-          .collection('submissions')
-          .add({
-        'childId': childId,
-        'parentId': parentId,
-        'assignmentId': assignmentId,  // Storing assignment ID as reference
-        'answer': answer,
-        'submittedAt': FieldValue.serverTimestamp(),
-      });
+          .collection('submissions');
 
+    Map<String, dynamic> data = {
+    'childId': childId,
+    'parentId': parentId,
+    'assignmentId': assignmentId,  // Storing assignment ID as reference
+    'answer': answer,
+    'submittedAt': FieldValue.serverTimestamp(),
+    };
+      await submissions.add(data);
       print("Answer submitted successfully");
     } catch (e) {
       print("Error submitting answer: $e");
@@ -93,9 +96,7 @@ class AssignmentsPage extends StatelessWidget {
                           childId: childId,
                           childUsername: childUsername,
                           parentEmail: parentEmail,
-                          submitAssignment: (answer) {
-                            submitAssignment(assignment.id, answer);
-                          },  // Pass the submit function here with assignment ID
+                          submitAssignment: submitAssignment,  // Pass the submit function here with assignment ID
                         ),
                       ),
                     );
