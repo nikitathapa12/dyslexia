@@ -5,6 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'NextWordGame.dart';
 
 class LetterSelectionGame extends StatefulWidget {
+  final String? selectedChildName;
+
+  LetterSelectionGame({this.selectedChildName});
+
   @override
   _LetterSelectionGameState createState() => _LetterSelectionGameState();
 }
@@ -20,8 +24,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
   int score = 0; // Current game score
   int lastScore = 0; // Last game score
 
-  // Firebase Firestore instance
-  final firestore = FirebaseFirestore.instance;
+  late FirebaseFirestore firestore; // Firestore instance
 
   @override
   void initState() {
@@ -31,6 +34,9 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
       duration: const Duration(seconds: 1),
       vsync: this,
     );
+
+    firestore = FirebaseFirestore.instance;
+
     _playBackgroundMusic(); // Play background music
     fetchLastScore(); // Fetch the last score from Firestore
   }
@@ -44,24 +50,11 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
 
   // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
-    User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) return; // No user logged in
-
-    try {
-      DocumentSnapshot doc = await firestore
-          .collection('parents')
-          .doc(parent.uid)
-          .collection('Letter Selection')
-          .doc('GameData')
-          .get();
-
-      if (doc.exists) {
-        setState(() {
-          lastScore = doc['lastScore'] ?? 0;
-        });
-      }
-    } catch (e) {
-      print("Error fetching last score: $e");
+    final doc = await firestore.collection('games').doc('letterSelection').get();
+    if (doc.exists) {
+      setState(() {
+        lastScore = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
+      });
     }
   }
 
@@ -86,14 +79,24 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
       }
 
       // Assuming you want to use the first child (or modify as needed)
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      print("child name: ");
+      print(widget.selectedChildName);
 
-      String childId = childDoc.id; // Extract the childId
-      print("Retrieved childId: $childId");
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
+
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
 
       // Reference to the gameData subcollection under the child's document
-      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Letter Selection');
-
+      CollectionReference gameDataCollection =
+      parentDoc.collection('children').doc(childId).collection('Letter Selection');
+      print("childId: $childId");
       // Prepare game data to store in Firestore
       Map<String, dynamic> gameData = {
         'lastScore': score,  // Current score
@@ -102,7 +105,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
         'lastUpdated': Timestamp.now(),
       };
 
-      // Add or update game data document in the 'gameData' subcollection
+      // Add or update game data document in the 'gameData' subcollrrection
       await gameDataCollection.add(gameData);
 
       print("Score saved to Firebase successfully!");
@@ -149,7 +152,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
           Future.delayed(Duration(seconds: 2), () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => NextWordGame()),
+              MaterialPageRoute(builder: (context) => NextWordGame(selectedChildName: widget.selectedChildName,)),
             );
           });
         });

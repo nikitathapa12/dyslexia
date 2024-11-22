@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class CatWordGame extends StatefulWidget {
+  final String? selectedChildName;
+
+  CatWordGame({this.selectedChildName});
   @override
   _CatWordGameState createState() => _CatWordGameState();
 }
@@ -14,6 +17,8 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   List<String> letters = ['A', 'T', 'C']; // Letters to drag
   late List<String?> filledLetters; // Track filled letters
   late AnimationController _controller;
+  late FirebaseFirestore firestore; // Firestore instance
+
   bool _isCompleted = false;
   final AudioPlayer _audioPlayer = AudioPlayer(); // Audio player instance
   final AudioPlayer _backgroundMusicPlayer = AudioPlayer(); // Background music player
@@ -21,7 +26,6 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   int score = 0;
   int lastScore = 0;
 
-  final firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -31,6 +35,9 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       duration: const Duration(seconds: 1),
       vsync: this,
     );
+
+
+    firestore = FirebaseFirestore.instance;
     _playBackgroundMusic(); // Start background music
     fetchLastScore(); // Fetch the last score from Firestore
   }
@@ -68,6 +75,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
 
   // Save the current score to Firebase
   Future<void> saveScoreToFirebase() async {
+    // Get the currently logged-in parent's ID
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) {
       print("No parent is logged in.");
@@ -75,16 +83,30 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
     }
 
     try {
+      // Access the parent's document
       DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
 
+      // Retrieve the first child document in the 'children' subcollection
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
       if (childrenSnapshot.docs.isEmpty) {
         print("No children found for this parent.");
         return;
       }
 
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
-      String childId = childDoc.id;
+      // Assuming you want to use the first child (or modify as needed)
+      print("child name: ");
+      print(widget.selectedChildName);
+
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
+
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
 
       CollectionReference gameDataCollection = parentDoc
           .collection('children')
@@ -173,7 +195,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   void _navigateToNextGame() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MonkeyWordGame()),
+      MaterialPageRoute(builder: (context) => MonkeyWordGame(selectedChildName: widget.selectedChildName,)),
     );
   }
 

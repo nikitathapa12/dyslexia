@@ -6,6 +6,10 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CherryCountingGame extends StatefulWidget {
+  final String? selectedChildName;
+
+  CherryCountingGame({this.selectedChildName});
+
   @override
   _CherryCountingGameState createState() => _CherryCountingGameState();
 }
@@ -23,6 +27,8 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
   List<AnimationController> _bounceControllers = [];
   AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _scoreAnimationController;
+  late FirebaseFirestore firestore; // Firestore instance
+
 
   @override
   void initState() {
@@ -32,7 +38,10 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
       vsync: this,
       duration: Duration(milliseconds: 500),
     );
-    _loadLastScore(); // Load the last score on game start
+    firestore = FirebaseFirestore.instance;
+
+
+    fetchLastScore();  // Load the last score on game start
   }
 
   @override
@@ -47,52 +56,32 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
 
   // Load the last score from Firestore
   // Load the last score from Firestore
-  Future<void> _loadLastScore() async {
-    try {
-      User? parent = FirebaseAuth.instance.currentUser;
-      if (parent == null) {
-        print("No parent is logged in.");
-        return;
-      }
+  Future<void> fetchLastScore() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return; // No user logged in
 
-      DocumentSnapshot parentDoc = await FirebaseFirestore.instance
+    try {
+      DocumentSnapshot doc = await firestore
           .collection('parents')
           .doc(parent.uid)
+
+          .collection('Cherry Counting')
+          .doc('GameData')
           .get();
 
-      if (parentDoc.exists) {
-        QuerySnapshot childrenSnapshot = await FirebaseFirestore.instance
-            .collection('parents')
-            .doc(parent.uid)
-            .collection('children')
-            .get();
-
-        if (childrenSnapshot.docs.isNotEmpty) {
-          String childId = childrenSnapshot.docs.first.id;
-
-          DocumentSnapshot gameDataDoc = await FirebaseFirestore.instance
-              .collection('parents')
-              .doc(parent.uid)
-              .collection('children')
-              .doc(childId)
-              .collection('Cherry Counting')
-              .doc('gameData')
-              .get();
-
-          if (gameDataDoc.exists) {
-            setState(() {
-              lastScore = gameDataDoc['lastScore'] ?? 0;
-            });
-          }
-        }
+      if (doc.exists) {
+        setState(() {
+          lastScore = doc['lastScore'] ?? 0;
+        });
       }
     } catch (e) {
-      print("Error loading last score: $e");
+      print("Error fetching last score: $e");
     }
   }
 
   // Save the current score to Firestore
   Future<void> saveScoreToFirebase() async {
+    // Get the currently logged-in parent's ID
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) {
       print("No parent is logged in.");
@@ -100,19 +89,32 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
     }
 
     try {
-      DocumentReference parentDoc = FirebaseFirestore.instance
-          .collection('parents')
-          .doc(parent.uid);
+      // Access the parent's document
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
 
+      // Retrieve the first child document in the 'children' subcollection
       QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
       if (childrenSnapshot.docs.isEmpty) {
         print("No children found for this parent.");
         return;
       }
 
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
-      String childId = childDoc.id;
+      // Assuming you want to use the first child (or modify as needed)
+      print("child name: ");
+      print(widget.selectedChildName);
 
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
+
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
+
+      // Reference to the gameData subcollection under the child's document
       CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Cherry Counting');
 
       Map<String, dynamic> gameData = {
@@ -205,7 +207,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
       saveScoreToFirebase();
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => StarCountingGame()),
+        MaterialPageRoute(builder: (context) => StarCountingGame(selectedChildName: widget.selectedChildName,)),
       );
     } else {
       _generateNewRound();

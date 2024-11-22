@@ -9,9 +9,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class GiftMatchingPage extends StatefulWidget {
-  final int? lastScore;
+  final String? selectedChildName;
 
-  GiftMatchingPage({this.lastScore});
+  GiftMatchingPage({this.selectedChildName});
 
   @override
   _GiftMatchingPageState createState() => _GiftMatchingPageState();
@@ -43,6 +43,8 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   bool isHintActive = false;
   late SharedPreferences prefs;
   late FlutterTts flutterTts;
+  bool _isConfettiPlaying = false; // Track confetti animation state
+
 
   List<bool> opening = List.generate(12, (index) => false);
   final firestore = FirebaseFirestore.instance;
@@ -52,25 +54,25 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     super.initState();
     _confettiController = ConfettiController(duration: Duration(seconds: 2));
     _audioPlayer = AudioPlayer();
-    flutterTts = FlutterTts(); // Initialize TTS
+    flutterTts = FlutterTts();
     giftColors.shuffle();
 
     _initializePreferences();
-    fetchLastScore();  // Fetch the last score from Firestore when the game starts
+    fetchLastScore();
   }
 
   void _initializePreferences() async {
     prefs = await SharedPreferences.getInstance();
-    score = 0; // Reset score on start
-    prefs.setInt('lastScore', score);
-    setState(() {});
+    setState(() {
+      score = prefs.getInt('lastScore') ?? 0; // Fetch last score or default to 0
+    });
   }
 
   Future<void> fetchLastScore() async {
     final doc = await firestore.collection('games').doc('Gift Matching').get();
     if (doc.exists) {
       setState(() {
-        score = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
+        score = doc['lastScore'] ?? 0;
       });
     }
   }
@@ -84,16 +86,19 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
 
     try {
       DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      QuerySnapshot childrenSnapshot = await parentDoc
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
+          .get();
+
       if (childrenSnapshot.docs.isEmpty) {
-        print("No children found for this parent.");
+        print("No matching child found.");
         return;
       }
 
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
-      String childId = childDoc.id;
+      DocumentReference childDoc = childrenSnapshot.docs.first.reference;
+      CollectionReference gameDataCollection = childDoc.collection('Gift Matching');
 
-      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Gift Matching');
       Map<String, dynamic> gameData = {
         'lastScore': score,
         'totalScore': FieldValue.increment(score),
@@ -102,7 +107,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
       };
 
       await gameDataCollection.add(gameData);
-      print("Score saved to Firebase successfully!");
+      print("Score saved successfully!");
     } catch (e) {
       print("Error saving score to Firebase: $e");
     }
@@ -112,7 +117,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   void dispose() {
     _confettiController.dispose();
     _audioPlayer.dispose();
-    flutterTts.stop(); // Stop TTS when disposing
+    flutterTts.stop();
     super.dispose();
   }
 
@@ -121,14 +126,14 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   }
 
   void _onGiftTap(int index) {
-    if (matched[index] || isHintActive) return; // Disable tap if hint is active
+    if (matched[index] || isHintActive) return;
 
     if (selectedColor == null) {
       setState(() {
         selectedColor = giftColors[index];
         selectedIndex = index;
       });
-      _speakColor(giftColors[index]); // Announce the color when tapped
+      _speakColor(giftColors[index]);
     } else {
       if (giftColors[index] == selectedColor && selectedIndex != index) {
         _playSound('assets/audio/correct.mp3');
@@ -141,7 +146,18 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
           selectedIndex = null;
           score += 1;
         });
-        _confettiController.play();
+
+        // Manage confetti animation state
+        if (!_isConfettiPlaying) {
+          _confettiController.play();
+          _isConfettiPlaying = true;
+
+          // Automatically stop confetti after its duration
+          Future.delayed(Duration(seconds: 2), () {
+            _confettiController.stop();
+            _isConfettiPlaying = false;
+          });
+        }
 
         Future.delayed(Duration(seconds: 1), () {
           setState(() {
@@ -165,6 +181,8 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     }
   }
 
+
+
   void _playSound(String path) async {
     try {
       await _audioPlayer.setSource(AssetSource(path));
@@ -175,7 +193,8 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   }
 
   void _useHint() {
-    if (isHintActive) return; // Prevent multiple hints at once
+    if (isHintActive) return;
+
     setState(() {
       isHintActive = true;
     });
@@ -192,7 +211,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
             setState(() {
               opening[i] = false;
               opening[j] = false;
-              isHintActive = false; // Reset hint flag after animation
+              isHintActive = false;
             });
           });
           return;
@@ -228,7 +247,9 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ColorMatchingGame(),
+        builder: (context) => ColorMatchingGame(
+          selectedChildName: widget.selectedChildName,
+        ),
       ),
     );
   }
@@ -242,7 +263,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     if (color == Colors.orange) colorName = 'Orange';
     if (color == Colors.yellow) colorName = 'Yellow';
 
-    await flutterTts.speak(colorName); // Speak the color name
+    await flutterTts.speak(colorName);
   }
 
   @override
@@ -270,7 +291,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Last Score: ${widget.lastScore ?? 0}',
+                      'Score: $score',
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),
                   ),
@@ -297,7 +318,9 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
                             children: [
                               Container(
                                 decoration: BoxDecoration(
-                                  color: matched[index] ? Colors.transparent : giftColors[index],
+                                  color: matched[index]
+                                      ? Colors.transparent
+                                      : giftColors[index],
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(color: Colors.white, width: 2),
                                 ),
@@ -306,7 +329,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
                                 Text(
                                   '🎁',
                                   style: TextStyle(fontSize: 32, color: Colors.white),
-                                ), // Gift icon
+                                ),
                             ],
                           ),
                         ),

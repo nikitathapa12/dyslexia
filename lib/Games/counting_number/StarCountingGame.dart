@@ -6,6 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StarCountingGame extends StatefulWidget {
+  final String? selectedChildName;
+
+  StarCountingGame({this.selectedChildName});
+
   @override
   _StarCountingGameState createState() => _StarCountingGameState();
 }
@@ -19,18 +23,20 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   bool _isCorrect = false;
   String countdown = '';
   List<AnimationController> _bounceControllers = [];
-  AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _scoreAnimationController;
+  late FirebaseFirestore firestore;
 
   @override
   void initState() {
     super.initState();
-    _generateNewRound();
+    firestore = FirebaseFirestore.instance; // Initialize Firestore
+    fetchLastScore(); // Fetch the last saved score
     _scoreAnimationController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 500),
     );
-    _loadLastScore(); // Load the last score from Firebase
+    _generateNewRound();
   }
 
   @override
@@ -43,99 +49,68 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
     super.dispose();
   }
 
-  // Load the last score from Firebase
-  Future<void> _loadLastScore() async {
-    try {
-      User? parent = FirebaseAuth.instance.currentUser;
-      if (parent == null) {
-        print("No parent is logged in.");
-        return;
-      }
+  Future<void> fetchLastScore() async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return;
 
-      DocumentSnapshot parentDoc = await FirebaseFirestore.instance
+    try {
+      DocumentSnapshot doc = await firestore
           .collection('parents')
           .doc(parent.uid)
+          .collection('Cherry Counting')
+          .doc('GameData')
           .get();
 
-      if (parentDoc.exists) {
-        QuerySnapshot childrenSnapshot = await FirebaseFirestore.instance
-            .collection('parents')
-            .doc(parent.uid)
-            .collection('children')
-            .get();
-
-        if (childrenSnapshot.docs.isNotEmpty) {
-          String childId = childrenSnapshot.docs.first.id;
-
-          DocumentSnapshot gameDataDoc = await FirebaseFirestore.instance
-              .collection('parents')
-              .doc(parent.uid)
-              .collection('children')
-              .doc(childId)
-              .collection('Star Counting')
-              .doc('gameData')
-              .get();
-
-          if (gameDataDoc.exists) {
-            setState(() {
-              lastScore = gameDataDoc['lastScore'] ?? 0;
-            });
-          }
-        }
+      if (doc.exists) {
+        setState(() {
+          lastScore = doc['lastScore'] ?? 0;
+        });
       }
     } catch (e) {
-      print("Error loading last score: $e");
+      debugPrint("Error fetching last score: $e");
     }
   }
 
-  // Save the score to Firebase
-  Future<void> _saveScoreToFirebase() async {
+  Future<void> saveScoreToFirebase() async {
     User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) {
-      print("No parent is logged in.");
-      return;
-    }
+    if (parent == null) return;
 
     try {
-      DocumentReference parentDoc =
-      FirebaseFirestore.instance.collection('parents').doc(parent.uid);
+      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
 
       QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
-      if (childrenSnapshot.docs.isEmpty) {
-        print("No children found for this parent.");
-        return;
-      }
+      if (childrenSnapshot.docs.isEmpty) return;
 
-      String childId = childrenSnapshot.docs.first.id;
-
-      CollectionReference gameDataCollection = parentDoc
+      final childDocs = await parentDoc
           .collection('children')
-          .doc(childId)
-          .collection('Star Counting');
+          .where('name', isEqualTo: widget.selectedChildName)
+          .get();
 
-      await gameDataCollection.doc('gameData').set({
+      if (childDocs.docs.isEmpty) return;
+
+      String childId = childDocs.docs.first.id;
+
+      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Cherry Counting');
+      await gameDataCollection.add({
         'lastScore': score,
         'totalScore': FieldValue.increment(score),
         'attempts': FieldValue.increment(1),
         'lastUpdated': Timestamp.now(),
-      }, SetOptions(merge: true));
-
-      print("Score saved to Firebase successfully!");
+      });
     } catch (e) {
-      print("Error saving score to Firebase: $e");
+      debugPrint("Error saving score to Firebase: $e");
     }
   }
 
   void _generateNewRound() {
     if (roundsPlayed >= 5) {
-      _saveScoreToFirebase(); // Save the final score
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GamesPage(selectedChildName: "",)));
+      saveScoreToFirebase();
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => GamesPage(selectedChildName: widget.selectedChildName)));
       return;
     }
 
     setState(() {
-      roundsPlayed++; // Increment the rounds played
-      lastScore = score; // Update lastScore
+      roundsPlayed++;
       correctNumber = Random().nextInt(9) + 1;
       _isAnswered = false;
       _isCorrect = false;
@@ -143,8 +118,6 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
       _initializeBounceControllers();
     });
   }
-
-
 
   void _initializeBounceControllers() {
     _bounceControllers.forEach((controller) => controller.dispose());
@@ -158,7 +131,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
     });
   }
 
-  void _handleOptionSelected(int selectedNumber) async {
+  void _handleOptionSelected(int selectedNumber) {
     if (selectedNumber == correctNumber) {
       setState(() {
         _isAnswered = true;
@@ -166,7 +139,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
         score++;
         _scoreAnimationController.forward(from: 0);
       });
-      _saveScoreToFirebase(); // Save score when correct
+      saveScoreToFirebase();
       _startCountdown();
     } else {
       setState(() {
@@ -193,6 +166,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   void _playNumberSound(int number) async {
     await _audioPlayer.play(AssetSource('audio/$number.mp3'));
   }
+
   Widget _buildStars() {
     return Wrap(
       spacing: 10.0,
@@ -212,28 +186,18 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   }
 
   Widget _buildOptions() {
-    List<int> options = [];
-    options.add(correctNumber);
-
+    List<int> options = [correctNumber];
     while (options.length < 4) {
       int randomOption = Random().nextInt(9) + 1;
-      if (!options.contains(randomOption)) {
-        options.add(randomOption);
-      }
+      if (!options.contains(randomOption)) options.add(randomOption);
     }
-
     options.shuffle();
 
     return Column(
       children: [
         Text(
           'How many stars are there?',
-          style: TextStyle(
-            fontSize: 26,
-            fontFamily: 'OpenDyslexic',
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         SizedBox(height: 10),
         Row(
@@ -269,47 +233,12 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
     );
   }
 
-  Widget _buildFeedback() {
-    if (_isAnswered) {
-      return _isCorrect
-          ? Text(
-        'Correct!',
-        style: TextStyle(
-          color: Colors.greenAccent,
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-        ),
-      )
-          : Text(
-        'Wrong! Try again.',
-        style: TextStyle(
-          color: Colors.redAccent,
-          fontSize: 30,
-          fontWeight: FontWeight.bold,
-        ),
-      );
-    }
-    return Container();
-  }
 
   Widget _buildScore() {
     return Column(
       children: [
-        Text(
-          'Score: $score',
-          style: TextStyle(
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        Text(
-          'Last Score: $lastScore',
-          style: TextStyle(
-            fontSize: 20,
-            color: Colors.white70,
-          ),
-        ),
+        Text('Score: $score', style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white)),
+        Text('Last Score: $lastScore', style: TextStyle(fontSize: 20, color: Colors.white70)),
       ],
     );
   }
@@ -317,43 +246,24 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Star Counting Game',
-          style: TextStyle(fontFamily: 'OpenDyslexic'),
-        ),
-        backgroundColor: Colors.blue.shade700,
-      ),
+      appBar: AppBar(title: Text('Star Counting Game')),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blue.shade900, Colors.lightBlue.shade300],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
+          gradient: LinearGradient(colors: [Colors.blue.shade900, Colors.lightBlue.shade300]),
         ),
         child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildScore(),
-                SizedBox(height: 20),
-                _buildStars(),
-                SizedBox(height: 20),
-                _buildOptions(),
-                _buildFeedback(),
-                Text(
-                  countdown,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildScore(),
+              SizedBox(height: 20),
+              _buildStars(),
+              SizedBox(height: 20),
+              _buildOptions(),
+              if (_isAnswered) Text(_isCorrect ? 'Correct!' : 'Wrong! Try again.', style: TextStyle(fontSize: 30)),
+              SizedBox(height: 10),
+              Text(countdown, style: TextStyle(fontSize: 32, color: Colors.white)),
+            ],
           ),
         ),
       ),

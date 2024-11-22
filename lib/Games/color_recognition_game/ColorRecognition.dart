@@ -114,7 +114,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
 
   // Add a parameter for gameId to differentiate between games
   Future<void> fetchLastScore() async {
-    final doc = await firestore.collection('games').doc('colorRecognition').get();
+    final doc = await firestore.collection('games').doc('Game Recognition').get();
     if (doc.exists) {
       setState(() {
         lastScore = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
@@ -260,7 +260,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => GiftMatchingPage(),
+        builder: (context) => GiftMatchingPage(selectedChildName: widget.selectedChildName,),
       ),
     );
   }

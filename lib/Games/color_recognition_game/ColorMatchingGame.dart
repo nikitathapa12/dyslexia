@@ -7,30 +7,19 @@ import 'package:vibration/vibration.dart';
 import 'draggable_bag.dart';
 import 'kid.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/cupertino.dart'; // For navigation
+import 'package:flutter/cupertino.dart';
 
-void main() => runApp(ColorMatchingGame());
+class ColorMatchingGame extends StatefulWidget {
+  final String? selectedChildName;
 
-class ColorMatchingGame extends StatelessWidget {
+  ColorMatchingGame({this.selectedChildName});
+
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Color Matching Game',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        fontFamily: 'OpenDyslexic', // Dyslexic-friendly font
-      ),
-      home: GamePage(),
-    );
-  }
+  _ColorMatchingGameState createState() => _ColorMatchingGameState();
 }
 
-class GamePage extends StatefulWidget {
-  @override
-  _GamePageState createState() => _GamePageState();
-}
-
-class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin {
+class _ColorMatchingGameState extends State<ColorMatchingGame>
+    with SingleTickerProviderStateMixin {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final FlutterTts _flutterTts = FlutterTts();
   late ConfettiController _confettiController;
@@ -69,7 +58,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
   int lastScore = 0;
   bool _showHint = false;
 
-  // Firebase Firestore instance
+
   final firestore = FirebaseFirestore.instance;
 
   @override
@@ -77,8 +66,10 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     super.initState();
     _confettiController = ConfettiController(duration: Duration(seconds: 1));
     _flutterTts.setLanguage("en-US");
-    _flutterTts.speak("Welcome to the Color Matching Game! Match each kid with the correct color bag.");
+    _flutterTts.speak(
+        "Welcome to the Color Matching Game! Match each kid with the correct color bag.");
     fetchLastScore(); // Fetch the last score when the game starts
+
   }
 
   @override
@@ -89,20 +80,16 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
 
   // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
-    final doc = await firestore.collection('games').doc('Color Matching').get();
-    print("fetching last score");
+    final doc = await firestore.collection('games').doc('ColorMatching').get();
     if (doc.exists) {
-      print("last score document found");
-      print(doc);
       setState(() {
-        lastScore = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
+        lastScore = doc['lastScore'] ?? 0; // Use a default value if lastScore doesn't exist
       });
     }
   }
 
   // Save the current score to Firebase
   Future<void> saveScoreToFirebase() async {
-    // Get the currently logged-in parent's ID
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) {
       print("No parent is logged in.");
@@ -113,6 +100,7 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
       // Access the parent's document
       DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
 
+
       // Retrieve the first child document in the 'children' subcollection
       QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
       if (childrenSnapshot.docs.isEmpty) {
@@ -121,14 +109,23 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
       }
 
       // Assuming you want to use the first child (or modify as needed)
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
+      print("child name: ");
+      print(widget.selectedChildName);
 
-      String childId = childDoc.id; // Extract the childId
-      print("Retrieved childId: $childId");
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
+
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
 
       // Reference to the gameData subcollection under the child's document
       CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Color Matching');
-
+      print("childId: $childId");
       // Prepare game data to store in Firestore
       Map<String, dynamic> gameData = {
         'lastScore': score,  // Current score
@@ -136,21 +133,19 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
         'attempts': FieldValue.increment(1),  // Increment attempts by 1
         'lastUpdated': Timestamp.now(),
       };
-
+      print("sent data: ");
+      print(gameData.entries);
       // Add or update game data document in the 'gameData' subcollection
       await gameDataCollection.add(gameData);
 
       print("Score saved to Firebase successfully!");
-
-      // Navigate to the games page after saving score
-      Navigator.pushReplacement(
-        context,
-        CupertinoPageRoute(builder: (context) => GamePage()), // Assuming you have a GamesPage to navigate to
-      );
     } catch (e) {
       print("Error saving score to Firebase: $e");
     }
   }
+
+
+
 
   Future<void> _playSound(String sound) async {
     try {
@@ -182,7 +177,6 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
         score += 1;
       });
 
-      // If all kids have matched their bags, save score
       if (!_kidHasBag.contains(false)) {
         saveScoreToFirebase();
       }
@@ -333,5 +327,3 @@ class _GamePageState extends State<GamePage> with SingleTickerProviderStateMixin
     );
   }
 }
-
-

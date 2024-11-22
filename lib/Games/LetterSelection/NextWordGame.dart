@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class NextWordGame extends StatefulWidget {
+  final String? selectedChildName;
+
+  NextWordGame({this.selectedChildName});
   @override
   _NextWordGameState createState() => _NextWordGameState();
 }
@@ -12,15 +15,15 @@ class NextWordGame extends StatefulWidget {
 class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderStateMixin {
   final String word = "WORLD"; // The word to fill
   List<String> letters = ['R', 'O', 'W', 'D', 'L']; // Letters to drag
-  late List<String?> filledLetters; // Track filled letters
+  late List<String?> filledLetters;// Track filled letters
+
+  late FirebaseFirestore firestore; // Firestore instance
   late AnimationController _controller;
   bool _isCompleted = false;
   final AudioPlayer _audioPlayer = AudioPlayer(); // Audio player instance
   int score = 0; // Track score
   int lastScore = 0; // Last game score
 
-  // Firebase Firestore instance
-  final firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -28,8 +31,11 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
     filledLetters = List.generate(word.length, (index) => null); // Initialize filled letters
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
+
       vsync: this,
     );
+
+    firestore = FirebaseFirestore.instance;
     _playBackgroundMusic(); // Play background music
     fetchLastScore(); // Fetch the last score from Firestore
   }
@@ -43,26 +49,14 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
 
   // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
-    User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) return; // No user logged in
-
-    try {
-      DocumentSnapshot doc = await firestore
-          .collection('parents')
-          .doc(parent.uid)
-          .collection('Word Game')
-          .doc('GameData')
-          .get();
-
-      if (doc.exists) {
-        setState(() {
-          lastScore = doc['lastScore'] ?? 0;
-        });
-      }
-    } catch (e) {
-      print("Error fetching last score: $e");
+    final doc = await firestore.collection('games').doc('nextWordGame').get();
+    if (doc.exists) {
+      setState(() {
+        lastScore = doc['lastScore'] ?? 0;  // Use a default value if lastScore doesn't exist
+      });
     }
   }
+
 
   // Save the current score to Firebase
   Future<void> saveScoreToFirebase() async {
@@ -73,7 +67,12 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
     }
 
     try {
+
+      // Access the parent's document
       DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
+
+
+      // Retrieve the first child document in the 'children' subcollection
       QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
 
       if (childrenSnapshot.docs.isEmpty) {
@@ -81,14 +80,29 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
         return;
       }
 
-      DocumentSnapshot childDoc = childrenSnapshot.docs.first;
-      String childId = childDoc.id;
 
+      // Assuming you want to use the first child (or modify as needed)
+      print("child name: ");
+      print(widget.selectedChildName);
+
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
+
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
+
+      // Reference to the gameData subcollection under the child's document
       CollectionReference gameDataCollection = parentDoc
           .collection('children')
           .doc(childId)
           .collection('Word Game');
 
+      // Prepare game data to store in Firestore
       Map<String, dynamic> gameData = {
         'lastScore': score,
         'totalScore': FieldValue.increment(score),
@@ -141,7 +155,7 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
           Future.delayed(Duration(seconds: 2), () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => CatWordGame()),
+              MaterialPageRoute(builder: (context) => CatWordGame(selectedChildName: widget.selectedChildName,)),
             );
           });
         });
