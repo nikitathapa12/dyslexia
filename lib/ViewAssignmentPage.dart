@@ -7,7 +7,7 @@ class ViewAssignmentPage extends StatefulWidget {
   final String childUsername;
   final String childId;
   final String parentId;
-  final Function(String, String, String, String) submitAssignment; // Single argument (answer)
+  final Function(String, String, String, String) submitAssignment;
 
   ViewAssignmentPage({
     required this.assignmentId,
@@ -15,7 +15,7 @@ class ViewAssignmentPage extends StatefulWidget {
     required this.childUsername,
     required this.childId,
     required this.parentId,
-    required this.submitAssignment,  // Pass submitAssignment function
+    required this.submitAssignment,
   });
 
   @override
@@ -23,13 +23,11 @@ class ViewAssignmentPage extends StatefulWidget {
 }
 
 class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
-  late DocumentSnapshot assignment;
-  late String assignmentType;
-  late String title;
-  late String description;
-  late String imageUrl;
-  late String audioUrl;
-
+  String title = 'Untitled Assignment';
+  String description = 'No description available.';
+  String imageUrl = '';
+  String audioUrl = '';
+  List<Map<String, dynamic>> questions = [];
   final Map<String, TextEditingController> answerControllers = {};
 
   @override
@@ -45,16 +43,29 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
           .doc(widget.assignmentId)
           .get();
 
-      setState(() {
-        assignment = snapshot;
-        assignmentType = snapshot['assignmentType'];
-        title = snapshot['title'];
-        description = snapshot['description'];
-        imageUrl = snapshot['imageUrl'] ?? '';
-        audioUrl = snapshot['audioUrl'] ?? '';
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>;
 
-        answerControllers['answer'] = TextEditingController();
-      });
+        setState(() {
+          title = data['title'] ?? 'Untitled Assignment';
+          description = data['description'] ?? 'No description available.';
+          imageUrl = data['imageUrl'] ?? '';
+          audioUrl = data['audioUrl'] ?? '';
+
+          // Safely retrieve 'questions' array
+          if (data.containsKey('questions')) {
+            questions = List<Map<String, dynamic>>.from(data['questions'] ?? []);
+            // Initialize controllers for each question's answer
+            for (var question in questions) {
+              if (question.containsKey('question')) {
+                answerControllers[question['question']] = TextEditingController();
+              }
+            }
+          }
+        });
+      } else {
+        print("Assignment does not exist in Firestore.");
+      }
     } catch (e) {
       print("Error fetching assignment data: $e");
     }
@@ -62,8 +73,16 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
 
   Future<void> submitAssignment() async {
     try {
-      final answer = answerControllers['answer']!.text;
-      widget.submitAssignment(widget.parentId, widget.childId, widget.assignmentId, answer);  // Call the passed function to submit answer
+      Map<String, String> answers = {};
+
+      // Collect answers for each question
+      questions.forEach((question) {
+        if (question.containsKey('question')) {
+          answers[question['question']] = answerControllers[question['question']]!.text;
+        }
+      });
+
+      widget.submitAssignment(widget.parentId, widget.childId, widget.assignmentId, answers.toString());
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Assignment Submitted!')));
     } catch (e) {
@@ -77,9 +96,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
       appBar: AppBar(title: Text('View Assignment')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: assignment == null
-            ? Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
+        child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -88,24 +105,68 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
               Text(description),
               SizedBox(height: 20),
 
-              if (imageUrl.isNotEmpty)
-                Image.network(imageUrl),
+              if (imageUrl.isNotEmpty) Image.network(imageUrl),
               SizedBox(height: 20),
 
               if (audioUrl.isNotEmpty)
                 IconButton(
                   icon: Icon(Icons.play_arrow),
                   onPressed: () {
-                    // Play audio logic goes here
+                    // Play audio logic
                   },
                 ),
               SizedBox(height: 20),
 
-              TextField(
-                controller: answerControllers['answer'],
-                decoration: InputDecoration(labelText: 'Enter your answer'),
-              ),
-              SizedBox(height: 20),
+              // Display questions and options
+              for (var question in questions)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        question['question'] ?? 'No question available',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 10),
+
+                      // Display options as either text or image
+                      for (var option in question['options'] ?? [])
+                        if (option.containsKey('text') && option['text'] is String)
+                        // Text Option
+                          Row(
+                            children: [
+                              Radio<String>(
+                                value: option['text'],
+                                groupValue: answerControllers[question['question']]!.text,
+                                onChanged: (value) {
+                                  setState(() {
+                                    answerControllers[question['question']]!.text = value ?? '';
+                                  });
+                                },
+                              ),
+                              Text(option['text']),
+                            ],
+                          )
+                        else if (option.containsKey('image') && option['image'] is String && option['image'].isNotEmpty)
+                        // Image Option
+                          Row(
+                            children: [
+                              Radio<String>(
+                                value: option['image'],
+                                groupValue: answerControllers[question['question']]!.text,
+                                onChanged: (value) {
+                                  setState(() {
+                                    answerControllers[question['question']]!.text = value ?? '';
+                                  });
+                                },
+                              ),
+                              Image.network(option['image'], width: 50, height: 50),
+                            ],
+                          ),
+                    ],
+                  ),
+                ),
 
               ElevatedButton(
                 onPressed: submitAssignment,

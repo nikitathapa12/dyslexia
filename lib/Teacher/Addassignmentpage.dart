@@ -1,8 +1,8 @@
-import 'dart:io'; // Import to work with File
+import 'dart:io'; // To handle file operations
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Firebase storage package
-import 'package:file_picker/file_picker.dart'; // File picker package
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
 
 class TeacherAddAssignmentPage extends StatefulWidget {
   @override
@@ -11,18 +11,13 @@ class TeacherAddAssignmentPage extends StatefulWidget {
 }
 
 class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
-  String selectedAssignmentType = 'Matching Words with Images'; // Default assignment type
+  String selectedAssignmentType = 'Matching Words with Images'; // Default type
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
-  final TextEditingController questionController = TextEditingController();
-  final TextEditingController shortAnswerController = TextEditingController();
 
-  // Audio and Image File Variables
-  String audioUrl = '';
-  String imageUrl = '';
+  List<Map<String, dynamic>> questions = [];
 
-  // List of assignment types
-  List<String> assignmentTypes = [
+  final List<String> assignmentTypes = [
     'Matching Words with Images',
     'Sentence Construction',
     'Fill-in-the-Blank with Audio Support',
@@ -35,37 +30,59 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
     'Body Part Fill-In',
   ];
 
-  // Function to add assignment data to Firestore
-  Future<void> addAssignment() async {
-    final Map<String, dynamic> assignmentData = {
+  // Function to upload files to Firebase Storage
+  Future<String?> uploadFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
+      if (result == null) return null;
+
+      String filePath = result.files.single.path!;
+      String fileName = result.files.single.name;
+      File file = File(filePath);
+
+      Reference storageRef = FirebaseStorage.instance
+          .ref()
+          .child('uploads/${fileName.replaceAll(RegExp(r"[^\w\-\.]"), "_")}');
+
+      UploadTask uploadTask = storageRef.putFile(file);
+      await uploadTask;
+
+      return await storageRef.getDownloadURL();
+    } catch (e) {
+      print("ERROR: File upload failed: $e");
+      return null;
+    }
+  }
+
+  // Function to submit assignment data to Firestore
+  Future<void> submitAssignment() async {
+    final assignmentData = {
       'title': titleController.text,
       'description': descriptionController.text,
       'assignmentType': selectedAssignmentType,
-      'question': questionController.text,
-      'audioUrl': audioUrl,
-      'imageUrl': imageUrl,
+      'questions': questions,
       'createdAt': Timestamp.now(),
     };
 
     try {
-      // Save assignment data to Firebase Firestore
       await FirebaseFirestore.instance.collection('assignments').add(assignmentData);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Assignment added successfully!')),
+      );
 
-      // Create a notification for both users and parents
       await createNotification();
 
-      // Clear form after submission
+      // Clear all fields
       titleController.clear();
       descriptionController.clear();
-      questionController.clear();
-      shortAnswerController.clear();
       setState(() {
-        audioUrl = '';
-        imageUrl = '';
+        questions = [];
       });
     } catch (e) {
-      // Handle errors (e.g., network issues)
-      print("Error adding assignment: $e");
+      print("ERROR: Failed to add assignment: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add assignment!')),
+      );
     }
   }
 
@@ -92,50 +109,95 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
     }
   }
 
-  // Function to upload files (image/audio) to Firebase Storage
-  Future<void> uploadFile(String fileType) async {
-    try {
-      // Pick a file (image or audio) using FilePicker
-      FilePickerResult? result = await FilePicker.platform.pickFiles();
-
-      if (result != null) {
-        // Get the file path and name
-        String filePath = result.files.single.path!;
-        String fileName = result.files.single.name;
-
-        // Create a File object from the file path
-        File file = File(filePath);
-
-        // Create a reference to Firebase Storage
-        Reference storageRef = FirebaseStorage.instance.ref().child('uploads/$fileName');
-
-        // Upload the file
-        UploadTask uploadTask = storageRef.putFile(file);
-
-        // Wait for the upload to complete
-        await uploadTask.whenComplete(() async {
-          // Get the URL of the uploaded file
-          String fileUrl = await storageRef.getDownloadURL();
-
-          // Update the imageUrl or audioUrl based on fileType
-          if (fileType == 'audio') {
-            audioUrl = fileUrl; // Update audio URL
-          } else if (fileType == 'image') {
-            imageUrl = fileUrl; // Update image URL
-          }
-
-          setState(() {
-            // Optionally update the UI with success message or image/audio preview
-          });
-        });
-      } else {
-        // Handle case where no file was selected
-        print("No file selected");
-      }
-    } catch (e) {
-      // Handle any error
-      print("Error uploading file: $e");
-    }
+  // Widget to dynamically add questions
+  Widget buildQuestionCard(int index) {
+    return Card(
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: EdgeInsets.all(12),
+        child: Column(
+          children: [
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Question ${index + 1}',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                questions[index]['question'] = value;
+              },
+            ),
+            SizedBox(height: 8),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Hint (Optional)',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                questions[index]['hint'] = value;
+              },
+            ),
+            SizedBox(height: 8),
+            ...List.generate(
+              questions[index]['options'].length,
+                  (optionIndex) => Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Option ${optionIndex + 1}',
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (value) {
+                        questions[index]['options'][optionIndex]['text'] = value;
+                      },
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.image, color: Colors.teal),
+                    onPressed: () async {
+                      String? imageUrl = await uploadFile();
+                      if (imageUrl != null) {
+                        setState(() {
+                          questions[index]['options'][optionIndex]['image'] =
+                              imageUrl;
+                        });
+                      }
+                    },
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.remove_circle, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        questions[index]['options'].removeAt(optionIndex);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  questions[index]['options'].add({'text': '', 'image': ''});
+                });
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+              child: Text('Add Option'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  questions.removeAt(index);
+                });
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: Text('Remove Question'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -143,101 +205,83 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Add Assignment'),
+        centerTitle: true,
+        backgroundColor: Colors.teal,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context); // Go back to the previous page
+          },
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              Text('Assignment Title', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextField(controller: titleController, decoration: InputDecoration(hintText: 'Enter assignment title')),
-              SizedBox(height: 20),
-
-              // Description
-              Text('Assignment Description', style: TextStyle(fontWeight: FontWeight.bold)),
-              TextField(controller: descriptionController, decoration: InputDecoration(hintText: 'Enter assignment description')),
-              SizedBox(height: 20),
-
-              // Assignment Type Dropdown
-              DropdownButtonFormField<String>(
-                value: selectedAssignmentType,  // Ensure this value is correctly initialized
-                items: assignmentTypes.map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedAssignmentType = newValue!;
+      body: SingleChildScrollView(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Title
+            TextField(
+              controller: titleController,
+              decoration: InputDecoration(
+                labelText: 'Assignment Title',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
+            // Description
+            TextField(
+              controller: descriptionController,
+              decoration: InputDecoration(
+                labelText: 'Assignment Description',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16),
+            // Assignment Type Dropdown
+            DropdownButtonFormField<String>(
+              value: selectedAssignmentType,
+              items: assignmentTypes.map((type) {
+                return DropdownMenuItem<String>(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedAssignmentType = value!;
+                });
+              },
+              decoration: InputDecoration(
+                labelText: 'Assignment Type',
+              ),
+            ),
+            SizedBox(height: 16),
+            // Questions
+            ...List.generate(
+              questions.length,
+                  (index) => buildQuestionCard(index),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  questions.add({
+                    'question': '',
+                    'hint': '',
+                    'options': [{'text': '', 'image': ''}]
                   });
-                },
-                decoration: InputDecoration(labelText: 'Assignment Type'),
-              ),
-              SizedBox(height: 20),
-
-              // Show dynamic fields based on assignment type
-              if (selectedAssignmentType == 'Reading Comprehension' ||
-                  selectedAssignmentType == 'Audio-based Assignments') ...[
-                // Text/Audio Upload for Comprehension or Listening
-                TextField(
-                  controller: questionController,
-                  decoration: InputDecoration(
-                    labelText: 'Enter passage or audio-based question',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () => uploadFile('audio'),  // Upload audio file
-                  child: Text('Upload Audio'),
-                ),
-              ] else if (selectedAssignmentType == 'Simple Word Fill with Picture' ||
-                  selectedAssignmentType == 'Food Fill-In with Picture' ||
-                  selectedAssignmentType == 'Matching Word with Picture') ...[
-                // Upload image for matching
-                ElevatedButton(
-                  onPressed: () => uploadFile('image'),  // Upload image
-                  child: Text('Upload Image'),
-                ),
-                TextField(
-                  controller: questionController,
-                  decoration: InputDecoration(
-                    labelText: 'Enter word for matching with image',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ] else if (selectedAssignmentType == 'Fill the First Letter' ||
-                  selectedAssignmentType == 'Number Fill-In') ...[
-                // Fill the first letter or number
-                TextField(
-                  controller: questionController,
-                  decoration: InputDecoration(
-                    labelText: 'Enter the fill-in-the-blank question',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ] else if (selectedAssignmentType == 'Letter Recognition Fill-In' ||
-                  selectedAssignmentType == 'Body Part Fill-In') ...[
-                // Letter Recognition or Body Part fill-in
-                TextField(
-                  controller: questionController,
-                  decoration: InputDecoration(
-                    labelText: 'Enter the question for recognition or body part',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: addAssignment,
-                child: Text('Add Assignment'),
-              ),
-            ],
-          ),
+                });
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+              child: Text('Add Question'),
+            ),
+            SizedBox(height: 16),
+            // Submit Button
+            ElevatedButton(
+              onPressed: submitAssignment,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+              child: Text('Submit Assignment'),
+            ),
+          ],
         ),
       ),
     );

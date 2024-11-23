@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:date_format/date_format.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:date_format/date_format.dart'; // Using date_format package
 
 class NotificationsPage extends StatefulWidget {
   @override
@@ -11,19 +12,19 @@ class NotificationsPage extends StatefulWidget {
 class _NotificationsPageState extends State<NotificationsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
-  late Stream<List<AssignmentModel>> assignmentsStream;
+  late Stream<List<NotificationModel>> notificationsStream;
 
   @override
   void initState() {
     super.initState();
     _initializeNotifications();
-    _listenForNewAssignments();
-    assignmentsStream = _firestore
-        .collection('assignments')
-        .orderBy('createdAt', descending: true)
+    _listenForNewNotifications();
+    notificationsStream = _firestore
+        .collection('notifications') // Change to notifications collection
+        .orderBy('timestamp', descending: true) // Ensure sorting by timestamp
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => AssignmentModel.fromFirestore(doc)).toList();
+      return snapshot.docs.map((doc) => NotificationModel.fromFirestore(doc)).toList();
     });
   }
 
@@ -44,25 +45,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
     );
   }
 
-  void _listenForNewAssignments() {
+  void _listenForNewNotifications() {
     _firestore
-        .collection('assignments')
-        .orderBy('createdAt', descending: true)
+        .collection('notifications') // Listen to the correct notifications collection
+        .orderBy('timestamp', descending: true)
         .snapshots()
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.added) {
-          final newAssignment = AssignmentModel.fromFirestore(change.doc);
-          _showLocalNotification(newAssignment);
+          final newNotification = NotificationModel.fromFirestore(change.doc);
+          _showLocalNotification(newNotification);
         }
       }
     });
   }
 
-  Future<void> _showLocalNotification(AssignmentModel assignment) async {
+  Future<void> _showLocalNotification(NotificationModel notification) async {
     const androidDetails = AndroidNotificationDetails(
-      'assignment_channel', // Channel ID
-      'Assignments', // Channel Name
+      'notification_channel', // Channel ID
+      'Notifications', // Channel Name
       channelDescription: 'Notifications for new assignments',
       importance: Importance.high,
       priority: Priority.high,
@@ -71,11 +72,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     const notificationDetails = NotificationDetails(android: androidDetails);
 
     await flutterLocalNotificationsPlugin.show(
-      assignment.id.hashCode, // Unique ID for the notification
-      'New Assignment: ${assignment.title}', // Notification title
-      assignment.description, // Notification body
+      notification.id.hashCode, // Unique ID for the notification
+      notification.title, // Notification title
+      notification.message, // Notification body
       notificationDetails,
-      payload: assignment.id, // Pass assignment ID as payload
+      payload: notification.id, // Pass notification ID as payload
     );
   }
 
@@ -83,77 +84,53 @@ class _NotificationsPageState extends State<NotificationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Assignments',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+        title: Text('Notifications'),
         centerTitle: true,
-        backgroundColor: Colors.teal,
-        elevation: 0,
+        backgroundColor: Colors.blueGrey,
       ),
-      backgroundColor: Colors.teal.shade50,
-      body: StreamBuilder<List<AssignmentModel>>(
-        stream: assignmentsStream,
+      body: StreamBuilder<List<NotificationModel>>(
+        stream: notificationsStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator(color: Colors.teal));
+            return Center(child: CircularProgressIndicator());
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
               child: Text(
-                'No new assignments.',
+                'No new notifications.',
                 style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
             );
           }
 
-          final assignments = snapshot.data!;
+          final notifications = snapshot.data!;
           return ListView.builder(
-            itemCount: assignments.length,
+            itemCount: notifications.length,
             itemBuilder: (context, index) {
-              final assignment = assignments[index];
+              final notification = notifications[index];
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 10, horizontal: 15),
                 elevation: 5,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                color: Colors.teal.shade100,
                 child: Padding(
                   padding: const EdgeInsets.all(15.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        assignment.title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal.shade900,
-                        ),
+                        notification.title,
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: 5),
                       Text(
-                        'Type: ${assignment.assignmentType}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.teal.shade700,
-                        ),
+                        notification.message,
+                        style: TextStyle(fontSize: 16),
                       ),
-                      SizedBox(height: 8),
+                      SizedBox(height: 5),
                       Text(
-                        'Question: ${assignment.question}',
-                        style: TextStyle(fontSize: 16, color: Colors.teal.shade800),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Description: ${assignment.description}',
-                        style: TextStyle(fontSize: 14, color: Colors.teal.shade600),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Created At: ${_formatDate(assignment.createdAt)}',
-                        style: TextStyle(fontSize: 12, color: Colors.teal.shade500),
+                        'Created At: ${_formatDate(notification.timestamp)}',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -175,31 +152,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 }
 
-class AssignmentModel {
+class NotificationModel {
   final String id;
   final String title;
-  final String description;
-  final String assignmentType;
-  final String question;
-  final Timestamp createdAt;
+  final String message;
+  final Timestamp timestamp;
 
-  AssignmentModel({
+  NotificationModel({
     required this.id,
     required this.title,
-    required this.description,
-    required this.assignmentType,
-    required this.question,
-    required this.createdAt,
+    required this.message,
+    required this.timestamp,
   });
 
-  factory AssignmentModel.fromFirestore(DocumentSnapshot doc) {
-    return AssignmentModel(
+  factory NotificationModel.fromFirestore(DocumentSnapshot doc) {
+    return NotificationModel(
       id: doc.id,
       title: doc['title'] ?? 'Untitled',
-      description: doc['description'] ?? 'No description available.',
-      assignmentType: doc['assignmentType'] ?? 'General',
-      question: doc['question'] ?? 'No question provided.',
-      createdAt: doc['createdAt'] ?? Timestamp.now(),
+      message: doc['message'] ?? 'No message available.',
+      timestamp: doc['timestamp'] ?? Timestamp.now(),
     );
   }
 }
