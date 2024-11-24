@@ -1,69 +1,58 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:dyslearn/ViewAssignmentPage.dart';
 import 'package:dyslearn/Parent/UserService.dart'; // Correct import of UserService
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AssignmentsPage extends StatelessWidget {
-
-
-
-
-  final String parentId;
-  final String childId;
-  final String childUsername;
-  final String parentEmail;
+  final String? selectedChildName;
 
   AssignmentsPage({
-    required this.parentId,
-    required this.childId,
-    required this.childUsername,
-    required this.parentEmail,
-
+    this.selectedChildName,
   });
 
-  final UserService _userService = UserService();  // Initialize UserService
+  final UserService _userService = UserService(); // Initialize UserService
 
   // Function to handle the submission of the assignment
-  Future<void> submitAssignment(String parentId, String childId, String assignmentId, String answer) async {
-    print("Submitting the assignment...");
+  Future<void> submitAssignment(String assignmentId, String answer, String assignmentType) async {
+    // Get the currently logged-in parent's ID
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      print("No parent is logged in.");
+      return;
+    }
+
     try {
-      if (parentId.isEmpty || childId.isEmpty) {
-        print('Error: Parent ID or Child ID is empty');
+      // Access the parent's document
+      DocumentReference parentDoc = FirebaseFirestore.instance.collection('parents').doc(parent.uid);
+
+      // Retrieve the first child document in the 'children' subcollection
+      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
+      if (childrenSnapshot.docs.isEmpty) {
+        print("No children found for this parent.");
         return;
       }
 
-      // Check if the parent document exists
-      final parentDoc = await FirebaseFirestore.instance.collection('parents').doc(parentId).get();
-      if (!parentDoc.exists) {
-        print('Error: Parent document does not exist for ID $parentId');
-        return;
-      }
-
-      // Check if the child document exists
-      final childDoc = await FirebaseFirestore.instance
+      final childDocs = await FirebaseFirestore.instance
           .collection('parents')
-          .doc(parentId)
+          .doc(parent.uid)
           .collection('children')
-          .doc(childId)
+          .where('name', isEqualTo: selectedChildName)  // Use the selected child's name
           .get();
-      if (!childDoc.exists) {
-        print('Error: Child document does not exist for ID $childId');
-        return;
-      }
 
-      // Prepare data to be saved
+      String childId = childDocs.docs.first.id; // Extract the childId
+      print("retrieved child id: $childId");
+
+      // Prepare submission data with 'assignmentType' passed as a parameter
       Map<String, dynamic> submissionData = {
-        'childId': childId,
-        'parentId': parentId,
+        'assignmentType': assignmentType, // Now assignmentType is correctly assigned
         'assignmentId': assignmentId,
         'answer': answer,
         'submittedAt': FieldValue.serverTimestamp(),
       };
 
-      // Save the submission
-      await FirebaseFirestore.instance
-          .collection('parents')
-          .doc(parentId)
+      // Save submission data to Firestore
+      await parentDoc
           .collection('children')
           .doc(childId)
           .collection('submissions')
@@ -75,8 +64,6 @@ class AssignmentsPage extends StatelessWidget {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,7 +72,7 @@ class AssignmentsPage extends StatelessWidget {
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('assignments')
+            .collection('assignments') // Assuming global assignments collection
             .orderBy('createdAt', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
@@ -105,26 +92,51 @@ class AssignmentsPage extends StatelessWidget {
             itemCount: assignments.length,
             itemBuilder: (context, index) {
               var assignment = assignments[index];
+
+              // Cast the assignment data to Map<String, dynamic>
+              var assignmentData = assignment.data() as Map<String, dynamic>;
+
+              // Safely access the 'type' field, checking if it exists
+              String assignmentType = assignmentData.containsKey('type')
+                  ? assignmentData['type']
+                  : 'No Type'; // Default value if 'type' is missing
+
               return Card(
                 margin: EdgeInsets.all(8.0),
                 child: ListTile(
-                  title: Text(assignment['title']),
-                  subtitle: Text(assignment['description']),
+                  title: Text(assignmentData['title'] ?? 'No Title'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(assignmentData['description'] ?? 'No Description'),
+                      SizedBox(height: 4),
+                      Text(
+                        'Type: $assignmentType', // Display the assignment type
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
                   trailing: Icon(Icons.arrow_forward),
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ViewAssignmentPage(
-                          assignmentId: assignment.id,
-                          parentId: parentId,
-                          childId: childId,
-                          childUsername: childUsername,
-                          parentEmail: parentEmail,
-                          submitAssignment: submitAssignment,  // Pass the submit function here with assignment ID
+                    // Ensure you pass the correct IDs before navigating
+                    User? parent = FirebaseAuth.instance.currentUser;
+                    if (parent != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ViewAssignmentPage(
+                            assignmentId: assignment.id,
+                            assignmentType: assignmentType, // Passing assignmentType here
+                            submitAssignment: (assignmentId, answer) {
+                              submitAssignment(assignmentId, answer, assignmentType); // Pass assignmentType
+                            },
+                            selectedChildName: selectedChildName, // Use the parameter
+                          ),
                         ),
-                      ),
-                    );
+                      );
+                    } else {
+                      print("No parent logged in. Cannot navigate.");
+                    }
                   },
                 ),
               );

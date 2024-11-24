@@ -145,7 +145,6 @@ class _StudentViewPageState extends State<StudentViewPage> {
     );
   }
 }
-
 class ProgressPage extends StatefulWidget {
   final String parentId;
   final String childId;
@@ -183,11 +182,13 @@ class _ProgressPageState extends State<ProgressPage> {
 
       List<Map<String, dynamic>> progressData = [];
 
+      // Fetching progress for games
       for (String category in gameCategories) {
         final progressDocs = await childRef.collection(category).get();
 
         for (var doc in progressDocs.docs) {
           progressData.add({
+            'category': 'Game',
             'gameCategory': category,
             'gameName': doc.id,
             'lastScore': doc.data()['lastScore'] ?? 0,
@@ -196,6 +197,20 @@ class _ProgressPageState extends State<ProgressPage> {
             'lastUpdated': (doc.data()['lastUpdated'] as Timestamp).toDate(),
           });
         }
+      }
+
+      // Fetching progress for assignments
+      final submissionsDocs = await childRef.collection('submissions').get();
+      for (var doc in submissionsDocs.docs) {
+        final answerData = doc.data()['answer'] as String;
+        final answerMap = _parseAnswerData(answerData);  // Parse answer data
+
+        progressData.add({
+          'category': 'Assignment',
+          'assignmentId': doc.data()['assignmentId'],
+          'answer': answerMap,
+          'submittedAt': (doc.data()['submittedAt'] as Timestamp).toDate(),
+        });
       }
 
       setState(() {
@@ -208,6 +223,21 @@ class _ProgressPageState extends State<ProgressPage> {
         _isLoading = false;
       });
     }
+  }
+
+  // Helper function to parse the answer string into assignment types and questions
+  Map<String, String> _parseAnswerData(String answerData) {
+    Map<String, String> parsedAnswer = {};
+    final regex = RegExp(r'Assignment: "(.*?)" Question: "(.*?)"');
+    final matches = regex.allMatches(answerData);
+
+    for (final match in matches) {
+      final assignmentType = match.group(1) ?? "Unknown Type";
+      final question = match.group(2) ?? "No Question";
+      parsedAnswer[assignmentType] = question;
+    }
+
+    return parsedAnswer;
   }
 
   @override
@@ -239,22 +269,61 @@ class _ProgressPageState extends State<ProgressPage> {
         itemCount: _progressList.length,
         itemBuilder: (context, index) {
           var progress = _progressList[index];
-          return Card(
-            margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            child: ListTile(
-              title: Text(
-                '${progress['gameCategory']} - ${progress['gameName']}',
-                style: TextStyle(
-                  fontFamily: 'OpenDyslexic',
-                  fontWeight: FontWeight.bold,
+          if (progress['category'] == 'Game') {
+            // Rendering game progress
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              child: ListTile(
+                title: Text(
+                  '${progress['gameCategory']} - ${progress['gameName']}',
+                  style: TextStyle(
+                    fontFamily: 'OpenDyslexic',
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                subtitle: Text(
+                  'Last Score: ${progress['lastScore']}\nTotal Score: ${progress['totalScore']}\nAttempts: ${progress['attempts']}\nLast Updated: ${progress['lastUpdated']}',
+                  style: TextStyle(fontFamily: 'OpenDyslexic'),
                 ),
               ),
-              subtitle: Text(
-                'Last Score: ${progress['lastScore']}\nTotal Score: ${progress['totalScore']}\nAttempts: ${progress['attempts']}\nLast Updated: ${progress['lastUpdated']}',
-                style: TextStyle(fontFamily: 'OpenDyslexic'),
+            );
+          } else if (progress['category'] == 'Assignment') {
+            // Rendering assignment progress
+            return Card(
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Assignment ID: ${progress['assignmentId']}",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Assignment Types and Questions:",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    ...progress['answer'].entries.map((entry) {
+                      return Row(
+                        children: [
+                          Text("Type: ${entry.key}, Question: ${entry.value}", style: TextStyle(fontSize: 14)),
+                        ],
+                      );
+                    }).toList(),
+                    SizedBox(height: 8),
+                    Text(
+                      "Submitted At: ${progress['submittedAt']}",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
+            );
+          } else {
+            return SizedBox.shrink();
+          }
         },
       ),
     );

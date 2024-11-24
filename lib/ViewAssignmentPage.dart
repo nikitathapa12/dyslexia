@@ -3,20 +3,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 
 class ViewAssignmentPage extends StatefulWidget {
+  final String? selectedChildName;
+
+
   final String assignmentId;
-  final String parentEmail;
-  final String childUsername;
-  final String childId;
-  final String parentId;
-  final Function(String, String, String, String) submitAssignment;
+  final String assignmentType;
+
+  final Function(String, String, ) submitAssignment;
 
   ViewAssignmentPage({
     required this.assignmentId,
-    required this.parentEmail,
-    required this.childUsername,
-    required this.childId,
-    required this.parentId,
+    required this.assignmentType,
     required this.submitAssignment,
+    required this.selectedChildName,
   });
 
   @override
@@ -96,13 +95,18 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
         }
       });
 
-      widget.submitAssignment(widget.parentId, widget.childId, widget.assignmentId, answers.toString());
+      widget.submitAssignment(
+        widget.assignmentId, // First argument
+        answers.toString(),  // Second argument
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Assignment Submitted!')));
     } catch (e) {
       print("Error submitting assignment: $e");
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {

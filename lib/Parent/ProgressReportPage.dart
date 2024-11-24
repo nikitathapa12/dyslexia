@@ -35,35 +35,21 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     print("fetchChildData function called");
     try {
       final parentDoc = await FirebaseFirestore.instance.collection('parents').doc(parentId).get();
-      // final documents = await FirebaseFirestore.instance.collection('parents').get();
-      // print("documents: ");
-      // for (var doc in documents.docs) {
-      //   print(doc.id); // Access the document ID
-      // }
-      //
-      // print("parentDocs: ");
-      // print(parentDoc.id); // Access the document ID
-      //
-      // print("doc exists: " + parentDoc.exists.toString());
-      // if (parentDoc.exists) {
-        final childDocs = await FirebaseFirestore.instance
-            .collection('parents')
-            .doc(parentId)
-            .collection('children')
-            .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
-            .get();
+      final childDocs = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parentId)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .get();
 
-        if (childDocs.docs.isNotEmpty) {
-          final childDoc = childDocs.docs.first;
-          childId = childDoc.id;
-          print("Child ID: $childId");
-          await fetchProgressData();
-        } else {
-          print("child lists fetched");
-          print(childDocs);
-          print("alert: No child found with name: ${widget.selectedChildName}");
-        }
-      // }
+      if (childDocs.docs.isNotEmpty) {
+        final childDoc = childDocs.docs.first;
+        childId = childDoc.id;
+        print("Child ID: $childId");
+        await fetchProgressData();
+      } else {
+        print("No child found with name: ${widget.selectedChildName}");
+      }
     } catch (e) {
       print("Error fetching child data: $e");
     }
@@ -77,6 +63,22 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           .collection('children')
           .doc(childId);
 
+      // Fetch assignments data
+      final submissionsDocs = await childRef.collection('submissions').get();
+      for (var doc in submissionsDocs.docs) {
+        final answerData = doc.data()['answer'] as String;
+        final answerMap = parseAnswerData(answerData); // Parse the answer data
+
+        // Add to the progress list under 'Assignments' category
+        progressList.add({
+          'category': 'Assignments', // Category for assignment
+          'assignmentId': doc.data()['assignmentId'], // Directly add assignment ID
+          'answer': answerMap, // Assignment type questions
+          'submittedAt': (doc.data()['submittedAt'] as Timestamp).toDate(), // Submission timestamp
+        });
+      }
+
+      // Fetch games data (assuming you have a games collection or category)
       final gameCategories = [
         'Game Recognition',
         'Gift Matching',
@@ -87,7 +89,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         'Monkey Word Selection',
         'Cherry Counting',
         'Star Counting',
-
       ];
 
       for (String category in gameCategories) {
@@ -95,8 +96,9 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
 
         for (var doc in progressDocs.docs) {
           progressList.add({
-            'gameCategory': category,
-            'gameName': doc.id,
+            'category': 'Games', // Category for games
+            'gameCategory': category, // Game category name
+            'gameName': doc.id, // Game name (ID)
             'lastScore': doc.data()['lastScore'] ?? 0,
             'totalScore': doc.data()['totalScore'] ?? 0,
             'attempts': doc.data()['attempts'] ?? 0,
@@ -109,6 +111,21 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
     } finally {
       setState(() => isLoading = false);
     }
+  }
+
+  // Helper function to parse the answer string into assignment types and questions
+  Map<String, String> parseAnswerData(String answerData) {
+    Map<String, String> parsedAnswer = {};
+    final regex = RegExp(r'Assignment: "(.*?)" Question: "(.*?)"');  // Adjusted to find assignment types and questions
+    final matches = regex.allMatches(answerData);
+
+    for (final match in matches) {
+      final assignmentType = match.group(1) ?? "Unknown Type";
+      final question = match.group(2) ?? "No Question";
+      parsedAnswer[assignmentType] = question;
+    }
+
+    return parsedAnswer;
   }
 
   @override
@@ -125,47 +142,85 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         itemCount: progressList.length,
         itemBuilder: (context, index) {
           final progress = progressList[index];
-          return Card(
-            margin: EdgeInsets.all(8),
-            elevation: 5,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Category: ${progress['gameCategory']}",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Game: ${progress['gameName']}",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Last Score: ${progress['lastScore']}",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Total Score: ${progress['totalScore']}",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Attempts: ${progress['attempts']}",
-                    style: TextStyle(fontSize: 16),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    "Last Updated: ${progress['lastUpdated']}",
-                    style: TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                ],
+
+          // Check if it's from Games or Assignments category
+          if (progress['category'] == 'Assignments') {
+            return Card(
+              margin: EdgeInsets.all(8),
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Assignment ID: ${progress['assignmentId']}",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    // Display assignment type questions
+                    Text("Assignment Types and Questions:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ...progress['answer'].entries.map((entry) {
+                      return Row(
+                        children: [
+                          Text("Type: ${entry.key}, Question: ${entry.value}", style: TextStyle(fontSize: 14)),
+                        ],
+                      );
+                    }).toList(),
+                    SizedBox(height: 8),
+                    Text(
+                      "Submitted At: ${progress['submittedAt']}",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
+            );
+          } else if (progress['category'] == 'Games') {
+            return Card(
+              margin: EdgeInsets.all(8),
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Game Category: ${progress['gameCategory']}",
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Game Name: ${progress['gameName']}",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Last Score: ${progress['lastScore']}",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Total Score: ${progress['totalScore']}",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Attempts: ${progress['attempts']}",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Last Updated: ${progress['lastUpdated']}",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          } else {
+            return SizedBox.shrink();
+          }
         },
       ),
     );

@@ -304,10 +304,8 @@ class _MenuPageState extends State<MenuPage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => AssignmentsPage(
-                      parentId: childData['parentId'] ?? '',
-                      childId: childData['childId'] ?? '',
-                      childUsername: widget.selectedChildName,
-                      parentEmail: _userEmail,
+
+                      selectedChildName: widget.selectedChildName,
                     ),
                   ),
                 );

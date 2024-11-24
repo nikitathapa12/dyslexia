@@ -74,14 +74,14 @@ class UserService {
     required String answer,
   }) async {
     try {
-      // Reference to the assignmentSubmissions collection of the specific child
       DocumentReference submissionDoc = _firestore
-          .collection('children') // Directly under 'children' collection
-          .doc(childId) // Specific child document
-          .collection('submisssions') // Subcollection for assignments
-          .doc(assignmentId); // Use the assignmentId as the document ID
+          .collection('parents')
+          .doc('parentuid')
+          .collection('children')
+          .doc(childId)
+          .collection('submissions')
+          .doc(assignmentId);
 
-      // Set or update the assignment submission for this child
       await submissionDoc.set({
         'answer': answer,
         'submittedAt': Timestamp.now(),
@@ -91,6 +91,7 @@ class UserService {
       print('Error saving assignment submission: $e');
     }
   }
+
 
   // Fetch assignment submissions for a specific child
   Future<List<Map<String, dynamic>>> fetchChildAssignments({
