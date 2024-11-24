@@ -35,9 +35,10 @@ dependencies:
   auto_size_text_field: ^2.2.4
   dropdown_button2: ^2.3.9
   dropdown_textfield: ^1.2.0
-
+  path_provider: ^2.1.5
   date_format: ^2.0.9
   flutter_local_notifications: ^18.0.1
+  http: ^1.2.2
 
 
 

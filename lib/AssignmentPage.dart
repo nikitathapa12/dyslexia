@@ -4,6 +4,10 @@ import 'package:dyslearn/Parent/UserService.dart'; // Correct import of UserServ
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AssignmentsPage extends StatelessWidget {
+
+
+
+
   final String parentId;
   final String childId;
   final String childUsername;
@@ -14,42 +18,63 @@ class AssignmentsPage extends StatelessWidget {
     required this.childId,
     required this.childUsername,
     required this.parentEmail,
+
   });
 
   final UserService _userService = UserService();  // Initialize UserService
 
   // Function to handle the submission of the assignment
   Future<void> submitAssignment(String parentId, String childId, String assignmentId, String answer) async {
-    print("submitting the assignment");
+    print("Submitting the assignment...");
     try {
-      print("parent: $parentId, child: $childId");
       if (parentId.isEmpty || childId.isEmpty) {
         print('Error: Parent ID or Child ID is empty');
-        return;  // Don't proceed if IDs are invalid
+        return;
       }
 
-      print('Submitting answer for Parent ID: $parentId, Child ID: $childId');
+      // Check if the parent document exists
+      final parentDoc = await FirebaseFirestore.instance.collection('parents').doc(parentId).get();
+      if (!parentDoc.exists) {
+        print('Error: Parent document does not exist for ID $parentId');
+        return;
+      }
 
-      // Example: Save the answer to Firestore in a 'submissions' collection
-      var submissions = await FirebaseFirestore.instance.collection('parents')
-          .doc(parentId)  // Use the correct parent ID
+      // Check if the child document exists
+      final childDoc = await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parentId)
           .collection('children')
-          .doc(childId)   // Use the correct child ID
-          .collection('submissions');
+          .doc(childId)
+          .get();
+      if (!childDoc.exists) {
+        print('Error: Child document does not exist for ID $childId');
+        return;
+      }
 
-    Map<String, dynamic> data = {
-    'childId': childId,
-    'parentId': parentId,
-    'assignmentId': assignmentId,  // Storing assignment ID as reference
-    'answer': answer,
-    'submittedAt': FieldValue.serverTimestamp(),
-    };
-      await submissions.add(data);
-      print("Answer submitted successfully");
+      // Prepare data to be saved
+      Map<String, dynamic> submissionData = {
+        'childId': childId,
+        'parentId': parentId,
+        'assignmentId': assignmentId,
+        'answer': answer,
+        'submittedAt': FieldValue.serverTimestamp(),
+      };
+
+      // Save the submission
+      await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parentId)
+          .collection('children')
+          .doc(childId)
+          .collection('submissions')
+          .add(submissionData);
+
+      print("Assignment submitted successfully!");
     } catch (e) {
-      print("Error submitting answer: $e");
+      print("Error submitting assignment: $e");
     }
   }
+
 
 
   @override

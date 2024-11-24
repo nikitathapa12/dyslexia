@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
 
 class ViewAssignmentPage extends StatefulWidget {
   final String assignmentId;
@@ -25,10 +26,10 @@ class ViewAssignmentPage extends StatefulWidget {
 class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
   String title = 'Untitled Assignment';
   String description = 'No description available.';
-  String imageUrl = '';
-  String audioUrl = '';
   List<Map<String, dynamic>> questions = [];
-  final Map<String, TextEditingController> answerControllers = {};
+
+  // Map to track selected answers for each question
+  final Map<String, String> selectedAnswers = {};
 
   @override
   void initState() {
@@ -49,19 +50,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
         setState(() {
           title = data['title'] ?? 'Untitled Assignment';
           description = data['description'] ?? 'No description available.';
-          imageUrl = data['imageUrl'] ?? '';
-          audioUrl = data['audioUrl'] ?? '';
-
-          // Safely retrieve 'questions' array
-          if (data.containsKey('questions')) {
-            questions = List<Map<String, dynamic>>.from(data['questions'] ?? []);
-            // Initialize controllers for each question's answer
-            for (var question in questions) {
-              if (question.containsKey('question')) {
-                answerControllers[question['question']] = TextEditingController();
-              }
-            }
-          }
+          questions = List<Map<String, dynamic>>.from(data['questions'] ?? []);
         });
       } else {
         print("Assignment does not exist in Firestore.");
@@ -71,14 +60,39 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
     }
   }
 
+  Widget buildImage(String? imagePath) {
+    if (imagePath == null || imagePath.isEmpty) {
+      return SizedBox.shrink();
+    } else if (imagePath.startsWith('/data/user/')) {
+      return Image.file(
+        File(imagePath),
+        width: 100,
+        height: 100,
+        errorBuilder: (context, error, stackTrace) {
+          return SizedBox.shrink();
+        },
+      );
+    } else if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: 250,
+        height: 250,
+        errorBuilder: (context, error, stackTrace) {
+          return SizedBox.shrink();
+        },
+      );
+    } else {
+      return SizedBox.shrink();
+    }
+  }
+
   Future<void> submitAssignment() async {
     try {
       Map<String, String> answers = {};
 
-      // Collect answers for each question
       questions.forEach((question) {
         if (question.containsKey('question')) {
-          answers[question['question']] = answerControllers[question['question']]!.text;
+          answers[question['question']] = selectedAnswers[question['question']] ?? '';
         }
       });
 
@@ -93,85 +107,123 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('View Assignment')),
-      body: Padding(
+      appBar: AppBar( title: Text('View Assignment', style: TextStyle(color: Colors.white)),  // White text color for contrast
+        backgroundColor: Colors.teal,  // Teal background color
+       ),
+      body: Container(
+        color: Colors.lightBlue[50],  // Soft background color
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              Text(description),
-              SizedBox(height: 20),
-
-              if (imageUrl.isNotEmpty) Image.network(imageUrl),
-              SizedBox(height: 20),
-
-              if (audioUrl.isNotEmpty)
-                IconButton(
-                  icon: Icon(Icons.play_arrow),
-                  onPressed: () {
-                    // Play audio logic
-                  },
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'OpenDyslexic',
+                  color: Colors.teal[800],  // Contrast color for the title
                 ),
-              SizedBox(height: 20),
+              ),
+              SizedBox(height: 15),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontFamily: 'OpenDyslexic',
+                  height: 1.5,
+                  color: Colors.teal[700],  // Slight contrast for description
+                ),
+              ),
+              SizedBox(height: 25),
 
-              // Display questions and options
+              // Display questions with options
               for (var question in questions)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        question['question'] ?? 'No question available',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      SizedBox(height: 10),
-
-                      // Display options as either text or image
-                      for (var option in question['options'] ?? [])
-                        if (option.containsKey('text') && option['text'] is String)
-                        // Text Option
-                          Row(
-                            children: [
-                              Radio<String>(
-                                value: option['text'],
-                                groupValue: answerControllers[question['question']]!.text,
-                                onChanged: (value) {
-                                  setState(() {
-                                    answerControllers[question['question']]!.text = value ?? '';
-                                  });
-                                },
-                              ),
-                              Text(option['text']),
-                            ],
-                          )
-                        else if (option.containsKey('image') && option['image'] is String && option['image'].isNotEmpty)
-                        // Image Option
-                          Row(
-                            children: [
-                              Radio<String>(
-                                value: option['image'],
-                                groupValue: answerControllers[question['question']]!.text,
-                                onChanged: (value) {
-                                  setState(() {
-                                    answerControllers[question['question']]!.text = value ?? '';
-                                  });
-                                },
-                              ),
-                              Image.network(option['image'], width: 50, height: 50),
-                            ],
+                  child: Card(  // Card for separating question and options
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            question['question'] ?? 'No question available',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'OpenDyslexic',
+                              color: Colors.teal[900],
+                            ),
                           ),
-                    ],
+                          SizedBox(height: 15),
+
+                          // Display options as text or image
+                          for (var option in question['options'] ?? [])
+                            if (option['image'] != null && option['image'] is String && option['image'].isNotEmpty)
+                              Row(
+                                children: [
+                                  Radio<String>(
+                                    value: option['image'],
+                                    groupValue: selectedAnswers[question['question']] ?? '',
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedAnswers[question['question']] = value ?? '';
+                                      });
+                                    },
+                                  ),
+                                  buildImage(option['image']),
+                                ],
+                              )
+                            else
+                              Row(
+                                children: [
+                                  Radio<String>(
+                                    value: option['text'],
+                                    groupValue: selectedAnswers[question['question']] ?? '',
+                                    onChanged: (value) {
+                                      setState(() {
+                                        selectedAnswers[question['question']] = value ?? '';
+                                      });
+                                    },
+                                  ),
+                                  Text(
+                                    option['text'] ?? 'No text available',
+                                    style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
+                                  ),
+                                ],
+                              ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
 
+              SizedBox(height: 20),
+
               ElevatedButton(
                 onPressed: submitAssignment,
-                child: Text('Submit'),
+                child: Text(
+                  'Submit',
+                  style: TextStyle(color: Colors.white),  // White text color
+                ),
+                style: ButtonStyle(
+                  backgroundColor: MaterialStateProperty.all<Color>(Colors.teal),
+                  padding: MaterialStateProperty.all<EdgeInsets>(EdgeInsets.symmetric(vertical: 14, horizontal: 30)),
+                  shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                    RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Ensure the text is white
+                ),
               ),
+
             ],
           ),
         ),

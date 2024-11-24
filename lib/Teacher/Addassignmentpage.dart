@@ -1,8 +1,8 @@
 import 'dart:io'; // To handle file operations
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart'; // For local file storage
 
 class TeacherAddAssignmentPage extends StatefulWidget {
   @override
@@ -19,8 +19,8 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
 
   final List<String> assignmentTypes = [
     'Matching Words with Images',
-    'Sentence Construction',
-    'Fill-in-the-Blank with Audio Support',
+
+
     'Games and Quizzes',
     'Matching Word with Picture',
     'Fill the First Letter',
@@ -30,7 +30,7 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
     'Body Part Fill-In',
   ];
 
-  // Function to upload files to Firebase Storage
+  // Function to upload files locally
   Future<String?> uploadFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -38,18 +38,17 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
 
       String filePath = result.files.single.path!;
       String fileName = result.files.single.name;
+
+      // Save file locally
+      Directory appDir = await getApplicationDocumentsDirectory();
+      String localPath = '${appDir.path}/$fileName';
+
       File file = File(filePath);
+      await file.copy(localPath);
 
-      Reference storageRef = FirebaseStorage.instance
-          .ref()
-          .child('uploads/${fileName.replaceAll(RegExp(r"[^\w\-\.]"), "_")}');
-
-      UploadTask uploadTask = storageRef.putFile(file);
-      await uploadTask;
-
-      return await storageRef.getDownloadURL();
+      return localPath;
     } catch (e) {
-      print("ERROR: File upload failed: $e");
+      print("ERROR: File save failed: $e");
       return null;
     }
   }
@@ -156,11 +155,11 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
                   IconButton(
                     icon: Icon(Icons.image, color: Colors.teal),
                     onPressed: () async {
-                      String? imageUrl = await uploadFile();
-                      if (imageUrl != null) {
+                      String? localImagePath = await uploadFile();
+                      if (localImagePath != null) {
                         setState(() {
                           questions[index]['options'][optionIndex]['image'] =
-                              imageUrl;
+                              localImagePath;
                         });
                       }
                     },
