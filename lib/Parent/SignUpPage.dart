@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dyslearn/Parent/ParentLoginPage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,25 +17,34 @@ class _ParentSignupPageState extends State<ParentSignupPage> {
   Future<void> _signup() async {
     if (_formKey.currentState!.validate()) {
       try {
-        UserCredential userCredential = await FirebaseAuth.instance
-            .createUserWithEmailAndPassword(
+        // Create the user with Firebase Authentication
+        UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailController.text,
           password: _passwordController.text,
         );
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Signup Successful')));
 
-        Future.delayed(Duration(seconds: 2), () {
+        // Save the parent's email and other details to Firestore
+        User? user = userCredential.user;
+        if (user != null) {
+          await FirebaseFirestore.instance.collection('parents').doc(user.uid).set({
+            'email': user.email,
+            'uid': user.uid,
+            'createdAt': FieldValue.serverTimestamp(),
+            // You can add other details like 'children' or 'profile' if needed
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sign Up Successful')));
           Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => ParentLoginPage()));
-        });
+            context,
+            MaterialPageRoute(builder: (context) => ParentLoginPage()), // Navigate to dashboard or menu
+          );
+        }
       } on FirebaseAuthException catch (e) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
       }
     }
   }
+
 
   @override
   void dispose() {
