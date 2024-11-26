@@ -296,6 +296,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
                 ),
               ),
             ),
+
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -310,16 +311,18 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
                         Text(
                           'Last Score: $lastScore',
                           style: TextStyle(
-                            fontSize: 24,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'OpenDyslexic',
                             color: Colors.black,
                           ),
                         ),
                         Text(
                           'Score: $score',
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'OpenDyslexic',
                             color: Colors.green,
                           ),
                         ),
@@ -359,7 +362,8 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
                               child: Text(
                                 '+1',
                                 style: TextStyle(
-                                  fontSize: 40,
+                                  fontFamily: 'OpenDyslexic',
+                                  fontSize: 14,
                                   color: Colors.green,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -393,7 +397,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
                           child: Center(
                             child: Text(
                               colorNames[index],
-                              style: TextStyle(color: Colors.white, fontSize: 16),
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'OpenDyslexic'),
                             ),
                           ),
                         ),
@@ -407,5 +411,6 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
         ),
       ),
     );
+
   }
 }

@@ -73,8 +73,8 @@ class _LoginPageState extends State<LoginPage> {
                       Text(
                         'Welcome!',
                         style: TextStyle(
-                          fontFamily: 'Chalk',
-                          fontSize: 32,
+                          fontFamily: 'OpenDyslexic',
+                          fontSize: 14,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -114,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                             'Forget Password?',
                             style: TextStyle(
                               color: Colors.white70,
-                              fontFamily: 'Chalk',
+                              fontFamily: 'OpenDyslexic',
                             ),
                           ),
                         ),
@@ -139,8 +139,8 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           'SIGN IN',
                           style: TextStyle(
-                            fontFamily: 'Chalk',
-                            fontSize: 18,
+                            fontFamily: 'OpenDyslexic',
+                            fontSize: 14,
                             color: Colors.white,
                           ),
                         ),
@@ -156,7 +156,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Text(
                           'Don\'t have an account? Sign Up',
                           style: TextStyle(
-                            fontFamily: 'Chalk',
+                            fontFamily: 'OpenDyslexic',
                             color: Colors.white70,
                           ),
                         ),
@@ -182,7 +182,7 @@ class _LoginPageState extends State<LoginPage> {
     return TextFormField(
       controller: controller,
       obscureText: obscureText,
-      style: TextStyle(color: Colors.white, fontFamily: 'Chalk'),
+      style: TextStyle(color: Colors.white, fontFamily: 'OpenDyslexic'),
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: TextStyle(color: Colors.white70),

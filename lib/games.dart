@@ -17,9 +17,10 @@ class GamesPage extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Educational Games',
-          style: TextStyle(fontFamily: 'ChalkStyle', fontSize: 24, color: Colors.grey),
+          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14, color: Colors.white,),
         ),
-        backgroundColor: Color(0xFFF7E7CE), // Calm, soothing color
+        backgroundColor: Colors.teal,
+        elevation: 4,// Calm, soothing color
       ),
       body: Container(
         padding: const EdgeInsets.all(16.0),
@@ -109,8 +110,8 @@ class _GameCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontFamily: 'ChalkStyle', // Updated fontFamily
-                    fontSize: 24, // Larger, readable font size
+                    fontFamily: 'OpenDyslexic', // Updated fontFamily
+                    fontSize: 14, // Larger, readable font size
                     fontWeight: FontWeight.bold,
                     color: Colors.teal[800], // Darker color for readability
                   ),

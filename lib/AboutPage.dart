@@ -16,7 +16,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'About DysLearn',
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'OpenDyslexic', // Use OpenDyslexic font
                 color: Colors.black,
@@ -35,7 +35,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'Instructions:',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'OpenDyslexic', // Use OpenDyslexic font
                 color: Colors.black,
@@ -57,7 +57,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'Privacy Policy:',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'OpenDyslexic', // Use OpenDyslexic font
                 color: Colors.black,
@@ -76,7 +76,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'Terms of Use:',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'OpenDyslexic', // Use OpenDyslexic font
                 color: Colors.black,

@@ -197,7 +197,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
       children: [
         Text(
           'How many stars are there?',
-          style: TextStyle(fontSize: 26,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.white),
         ),
         SizedBox(height: 10),
         Row(
@@ -220,7 +220,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
                 child: Text(
                   '$option',
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 14,
                     fontFamily: 'OpenDyslexic',
                     color: Colors.white,
                   ),
@@ -237,8 +237,8 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   Widget _buildScore() {
     return Column(
       children: [
-        Text('Score: $score', style: TextStyle(fontSize: 30,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.white)),
-        Text('Last Score: $lastScore', style: TextStyle(fontSize: 20,fontFamily: 'OpenDyslexic', color: Colors.white70)),
+        Text('Score: $score', style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.white)),
+        Text('Last Score: $lastScore', style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.white70)),
       ],
     );
   }
@@ -262,7 +262,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
               _buildOptions(),
               if (_isAnswered) Text(_isCorrect ? 'Correct!' : 'Wrong! Try again.', style: TextStyle(fontSize: 30)),
               SizedBox(height: 10),
-              Text(countdown, style: TextStyle(fontSize: 32,fontFamily: 'OpenDyslexic', color: Colors.white)),
+              Text(countdown, style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.white)),
             ],
           ),
         ),

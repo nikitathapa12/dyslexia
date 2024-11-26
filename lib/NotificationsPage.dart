@@ -99,7 +99,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
             return Center(
               child: Text(
                 'No new notifications.',
-                style: TextStyle(fontSize: 16, color: Colors.grey),
+                style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic',color: Colors.grey),
               ),
             );
           }
@@ -120,17 +120,17 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     children: [
                       Text(
                         notification.title,
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold),
                       ),
                       SizedBox(height: 5),
                       Text(
                         notification.message,
-                        style: TextStyle(fontSize: 16),
+                        style: TextStyle(fontSize: 14),
                       ),
                       SizedBox(height: 5),
                       Text(
                         'Created At: ${_formatDate(notification.timestamp)}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.grey),
                       ),
                     ],
                   ),

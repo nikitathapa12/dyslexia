@@ -203,7 +203,8 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Assignment'),
+        title: Text('Add Assignment',
+          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),),
         centerTitle: true,
         backgroundColor: Colors.teal,
         leading: IconButton(
@@ -225,6 +226,7 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
                 labelText: 'Assignment Title',
                 border: OutlineInputBorder(),
               ),
+              style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14,)
             ),
             SizedBox(height: 16),
             // Description
@@ -234,6 +236,7 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
                 labelText: 'Assignment Description',
                 border: OutlineInputBorder(),
               ),
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14,)
             ),
             SizedBox(height: 16),
             // Assignment Type Dropdown
@@ -242,7 +245,7 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
               items: assignmentTypes.map((type) {
                 return DropdownMenuItem<String>(
                   value: type,
-                  child: Text(type),
+                  child: Text(type, style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14)),
                 );
               }).toList(),
               onChanged: (value) {
@@ -253,6 +256,7 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
               decoration: InputDecoration(
                 labelText: 'Assignment Type',
               ),
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14,)
             ),
             SizedBox(height: 16),
             // Questions
@@ -271,14 +275,14 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
                 });
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-              child: Text('Add Question'),
+              child: Text('Add Question',  style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14)),
             ),
             SizedBox(height: 16),
             // Submit Button
             ElevatedButton(
               onPressed: submitAssignment,
               style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-              child: Text('Submit Assignment'),
+              child: Text('Submit Assignment', style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14)),
             ),
           ],
         ),

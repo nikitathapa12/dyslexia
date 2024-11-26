@@ -43,7 +43,8 @@ class _TeacherWelcomePageState extends State<TeacherWelcomePage> with SingleTick
                 child: Text(
                   'Welcome to Teacher Dashboard',
                   style: TextStyle(
-                    fontSize: 28,
+
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF2C3E50), // Soft blue color for text, more readable for dyslexic users
                     fontFamily: 'OpenDyslexic', // Ensure dyslexic-friendly font

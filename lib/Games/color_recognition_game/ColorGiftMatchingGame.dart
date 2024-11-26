@@ -292,7 +292,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
                     ),
                     child: Text(
                       'Score: $score',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(color: Colors.white, fontFamily:'OpenDyslexic',fontSize: 14),
                     ),
                   ),
                   IconButton(

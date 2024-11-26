@@ -1,7 +1,7 @@
 import 'package:dyslearn/AboutPage.dart';
 import 'package:flutter/material.dart';
 import 'package:dyslearn/MenuPage.dart';
-import 'package:dyslearn/login_page.dart';
+import 'package:dyslearn/Teacher/login_page.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -119,8 +119,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     Text(
                       'Teacher\'s Login',
                       style: TextStyle(
-                        fontSize: 24,
-                        fontFamily: 'Caveat', // Use the chalk-style font you added
+                        fontSize: 14,
+                        fontFamily: 'OpenDyslexic', // Use the chalk-style font you added
                         color: Colors.white,
                       ),
                     ),
@@ -143,8 +143,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       child: Text(
                         'Login',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontFamily: 'ChalkStyle', // Use the chalk-style font here too
+                          fontSize: 14,
+                          fontFamily: 'OpenDyslexic',
                           color: Colors.white,
                         ),
                       ),

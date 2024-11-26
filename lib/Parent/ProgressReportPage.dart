@@ -98,7 +98,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           progressList.add({
             'category': 'Games', // Category for games
             'gameCategory': category, // Game category name
-            'gameName': doc.id, // Game name (ID)
+            // 'gameName': doc.id, // Game name (ID)
             'lastScore': doc.data()['lastScore'] ?? 0,
             'totalScore': doc.data()['totalScore'] ?? 0,
             'attempts': doc.data()['attempts'] ?? 0,
@@ -132,97 +132,210 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Progress Report - ${widget.selectedChildName}"),  // Show the selected child's name
+        title: Text(
+          "Progress Report - ${widget.selectedChildName}",
+          style: TextStyle(fontFamily: 'OpenDyslexic'),
+        ),
+        backgroundColor: Colors.teal, // Soothing color for app bar
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : progressList.isEmpty
-          ? Center(child: Text("No progress data available."))
+          ? Center(
+        child: Text(
+          "No progress data available.",
+          style: TextStyle(
+            fontSize: 16,
+            fontFamily: 'OpenDyslexic',
+            color: Colors.grey[700],
+          ),
+        ),
+      )
           : ListView.builder(
         itemCount: progressList.length,
         itemBuilder: (context, index) {
           final progress = progressList[index];
 
-          // Check if it's from Games or Assignments category
+          // Card for Assignments
           if (progress['category'] == 'Assignments') {
             return Card(
-              margin: EdgeInsets.all(8),
-              elevation: 5,
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 6,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Icon(Icons.assignment, color: Colors.orange),
+                        SizedBox(width: 8),
+                        Text(
+                          "Assignment Details",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                        ),
+                      ],
+                    ),
+                    Divider(color: Colors.grey),
+                    SizedBox(height: 8),
                     Text(
                       "Assignment ID: ${progress['assignmentId']}",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'OpenDyslexic',
+                      ),
                     ),
                     SizedBox(height: 8),
-                    // Display assignment type questions
-                    Text("Assignment Types and Questions:", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Questions and Answers:",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'OpenDyslexic',
+                      ),
+                    ),
                     ...progress['answer'].entries.map((entry) {
-                      return Row(
-                        children: [
-                          Text("Type: ${entry.key}, Question: ${entry.value}", style: TextStyle(fontSize: 14)),
-                        ],
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.question_answer,
+                                size: 16, color: Colors.blue),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Type: ${entry.key}, Question: ${entry.value}",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontFamily: 'OpenDyslexic',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       );
                     }).toList(),
                     SizedBox(height: 8),
                     Text(
                       "Submitted At: ${progress['submittedAt']}",
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontFamily: 'OpenDyslexic',
+                      ),
                     ),
                   ],
                 ),
               ),
             );
-          } else if (progress['category'] == 'Games') {
+          }
+
+          // Card for Games
+          if (progress['category'] == 'Games') {
             return Card(
-              margin: EdgeInsets.all(8),
-              elevation: 5,
+              margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 6,
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Icon(Icons.videogame_asset, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          "Game Progress",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                        ),
+                      ],
+                    ),
+                    Divider(color: Colors.grey),
+                    SizedBox(height: 8),
                     Text(
                       "Game Category: ${progress['gameCategory']}",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'OpenDyslexic',
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       "Game Name: ${progress['gameName']}",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'OpenDyslexic',
+                      ),
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      "Last Score: ${progress['lastScore']}",
-                      style: TextStyle(fontSize: 16),
+                    Row(
+                      children: [
+                        Icon(Icons.star, color: Colors.amber),
+                        SizedBox(width: 8),
+                        Text(
+                          "Last Score: ${progress['lastScore']}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      "Total Score: ${progress['totalScore']}",
-                      style: TextStyle(fontSize: 16),
+                    Row(
+                      children: [
+                        Icon(Icons.leaderboard, color: Colors.blue),
+                        SizedBox(width: 8),
+                        Text(
+                          "Total Score: ${progress['totalScore']}",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontFamily: 'OpenDyslexic',
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 8),
                     Text(
                       "Attempts: ${progress['attempts']}",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontFamily: 'OpenDyslexic',
+                      ),
                     ),
                     SizedBox(height: 8),
                     Text(
                       "Last Updated: ${progress['lastUpdated']}",
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        fontFamily: 'OpenDyslexic',
+                      ),
                     ),
                   ],
                 ),
               ),
             );
-          } else {
-            return SizedBox.shrink();
           }
+
+          return SizedBox.shrink();
         },
       ),
     );
   }
+
 }

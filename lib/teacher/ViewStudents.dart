@@ -252,7 +252,7 @@ class _ProgressPageState extends State<ProgressPage> {
       appBar: AppBar(
         title: Text(
           '${widget.childName}\'s Progress',
-          style: TextStyle(fontFamily: 'OpenDyslexic'),
+          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
         ),
         backgroundColor: Colors.teal,
       ),
@@ -262,7 +262,7 @@ class _ProgressPageState extends State<ProgressPage> {
           ? Center(
         child: Text(
           'No progress data available',
-          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 16),
+          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
         ),
       )
           : ListView.builder(
@@ -283,7 +283,7 @@ class _ProgressPageState extends State<ProgressPage> {
                 ),
                 subtitle: Text(
                   'Last Score: ${progress['lastScore']}\nTotal Score: ${progress['totalScore']}\nAttempts: ${progress['attempts']}\nLast Updated: ${progress['lastUpdated']}',
-                  style: TextStyle(fontFamily: 'OpenDyslexic'),
+                  style: TextStyle(fontFamily: 'OpenDyslexic',fontSize: 14),
                 ),
               ),
             );
@@ -298,12 +298,12 @@ class _ProgressPageState extends State<ProgressPage> {
                   children: [
                     Text(
                       "Assignment ID: ${progress['assignmentId']}",
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold),
                     ),
                     SizedBox(height: 8),
                     Text(
                       "Assignment Types and Questions:",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold),
                     ),
                     ...progress['answer'].entries.map((entry) {
                       return Row(
@@ -315,7 +315,7 @@ class _ProgressPageState extends State<ProgressPage> {
                     SizedBox(height: 8),
                     Text(
                       "Submitted At: ${progress['submittedAt']}",
-                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                      style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.grey),
                     ),
                   ],
                 ),

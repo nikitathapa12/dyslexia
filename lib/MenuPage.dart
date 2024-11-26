@@ -1,14 +1,14 @@
-import 'package:dyslearn/EditChildProfile.dart';
+import 'package:dyslearn/user/EditChildProfile.dart';
 import 'package:dyslearn/NotificationsPage.dart';
 import 'package:dyslearn/Parent/FeedbackPage.dart';
 import 'package:dyslearn/Parent/ParentLoginPage.dart';
 import 'package:dyslearn/Parent/ProgressReportPage.dart';
 import 'package:dyslearn/home_page.dart';
-import 'package:dyslearn/profile.dart';
+import 'package:dyslearn/user/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Ensure this import is present
-import 'package:dyslearn/AssignmentPage.dart';
+import 'package:dyslearn/User/AssignmentPage.dart';
 import 'package:dyslearn/games.dart';
 
 class MenuPage extends StatefulWidget {

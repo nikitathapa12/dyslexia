@@ -208,11 +208,11 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
                         children: [
                           Text(
                             'Score: $score   ',
-                            style: TextStyle(fontSize: 16, fontFamily: 'ChalkStyle'),
+                            style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic'),
                           ),
                           Text(
                             'Last Score: $lastScore',
-                            style: TextStyle(fontSize: 16, fontFamily: 'ChalkStyle'),
+                            style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic'),
                           ),
                         ],
                       ),
@@ -252,7 +252,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
                                 child: Center(
                                   child: Text(
                                     filledLetters[index] ?? word[index],
-                                    style: TextStyle(fontSize: 24, fontFamily: 'ChalkStyle'),
+                                    style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic'),
                                   ),
                                 ),
                               );
@@ -298,7 +298,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
       ),
       child: Text(
         letter,
-        style: TextStyle(fontSize: 24, color: Colors.white, fontFamily: 'ChalkStyle'),
+        style: TextStyle(fontSize: 14, color: Colors.white, fontFamily: 'OpenDyslexic'),
       ),
     );
   }
@@ -316,7 +316,7 @@ class _LetterSelectionGameState extends State<LetterSelectionGame> with SingleTi
           SizedBox(width: 10),
           Text(
             "HELLO!",
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.green, fontFamily: 'ChalkStyle'),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.green, fontFamily: 'OpenDyslexic'),
           ),
           SizedBox(width: 10),
           Icon(Icons.tag_faces, size: 50, color: Colors.green),

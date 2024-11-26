@@ -2,7 +2,7 @@ import 'package:dyslearn/Parent/SettingPage.dart';
 import 'package:dyslearn/Teacher/ChangePasswordPage.dart';
 import 'package:dyslearn/Teacher/EditProfilePage.dart';
 import 'package:dyslearn/home_page.dart';
-import 'package:dyslearn/login_page.dart';
+import 'package:dyslearn/Teacher/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -59,7 +59,7 @@ class ProfilePage extends StatelessWidget {
                 Text(
                   'Welcome, ${user?.displayName ?? 'User'}!',
                   style: TextStyle(
-                    fontSize: 30,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                     fontFamily: 'OpenDyslexic',
@@ -72,7 +72,7 @@ class ProfilePage extends StatelessWidget {
                 Text(
                   'Profile Information',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: Colors.black54,
                     fontFamily: 'OpenDyslexic',
@@ -94,7 +94,7 @@ class ProfilePage extends StatelessWidget {
                 else
                   Text(
                     'No user logged in',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                    style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.grey),
                   ),
                 SizedBox(height: 20),
 
@@ -151,15 +151,15 @@ class ProfilePage extends StatelessWidget {
           Text(
             '$label ',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontSize: 14, fontFamily: 'OpenDyslexic',
+
               color: Colors.teal.shade700,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(fontSize: 18, color: Colors.black87),
+              style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.black87),
               overflow: TextOverflow.ellipsis,
             ),
           ),

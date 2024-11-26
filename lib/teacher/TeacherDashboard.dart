@@ -5,7 +5,7 @@ import 'package:dyslearn/Teacher/TeacherFeedbackPage.dart';
 import 'package:dyslearn/Teacher/ViewStudents.dart';
 import 'package:dyslearn/Teacher/WelcomePage.dart';
 import 'package:dyslearn/home_page.dart';
-import 'package:dyslearn/login_page.dart';
+import 'package:dyslearn/Teacher/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -149,7 +149,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         title,
         style: TextStyle(
           fontFamily: 'OpenDyslexic',
-          fontSize: 18,
+          fontSize: 14,
           color: _selectedIndex == index ? Colors.teal[900] : Colors.white,
         ),
       ),

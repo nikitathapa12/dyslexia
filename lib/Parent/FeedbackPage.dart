@@ -110,7 +110,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
         title: Text(
           'Submit Feedback',
           style: TextStyle(
-            fontSize: 20,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             fontFamily: 'OpenDyslexic', // Use OpenDyslexic font here
           ),
@@ -136,7 +136,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   Text(
                     'Select Child\'s Username:',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'OpenDyslexic',
                     ),
@@ -149,7 +149,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                       value: username,
                       child: Text(
                         username,
-                        style: TextStyle(fontSize: 16, fontFamily: 'OpenDyslexic'),
+                        style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic'),
                       ),
                     ))
                         .toList(),
@@ -179,7 +179,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                   Text(
                     'Enter Feedback:',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'OpenDyslexic',
                     ),
@@ -219,7 +219,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
                       child: Text(
                         'Submit Feedback',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                           fontFamily: 'OpenDyslexic',

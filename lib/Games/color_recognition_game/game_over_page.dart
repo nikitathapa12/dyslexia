@@ -132,7 +132,7 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
                       Text(
                         'Total Score',
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'OpenDyslexic',
                           color: Colors.blue[800],
@@ -142,8 +142,9 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
                       Text(
                         '${widget.score}',
                         style: TextStyle(
-                          fontSize: 48,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
+                          fontFamily: 'OpenDyslexic',
                           color: Colors.orange,
                         ),
                       ),

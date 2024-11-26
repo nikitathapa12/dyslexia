@@ -24,8 +24,7 @@ class ViewChildList extends StatelessWidget {
       return {
         'name': doc['name'],
         'age': doc['age'],
-        'level': doc['level'],
-        'preferences': doc['preferences'],
+
         'profilePic': doc['profilePic'],
       };
     }).toList();
@@ -35,7 +34,15 @@ class ViewChildList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Children List'),
+        title: Text(
+          'Children List',
+          style: TextStyle(
+            fontFamily: 'OpenDyslexic', // Dyslexia-friendly font
+            fontSize: 20, // Increased font size for app bar
+          ),
+        ),
+        backgroundColor: Colors.teal, // AppBar color
+        elevation: 4,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _getChildren(),
@@ -43,9 +50,27 @@ class ViewChildList extends StatelessWidget {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
           } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: TextStyle(
+                  fontFamily: 'OpenDyslexic',
+                  fontSize: 14,
+                  color: Colors.redAccent,
+                ),
+              ),
+            );
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No children added yet.'));
+            return Center(
+              child: Text(
+                'No children added yet.',
+                style: TextStyle(
+                  fontFamily: 'OpenDyslexic',
+                  fontSize: 14,
+                  color: Colors.teal,
+                ),
+              ),
+            );
           }
 
           List<Map<String, dynamic>> children = snapshot.data!;
@@ -53,26 +78,55 @@ class ViewChildList extends StatelessWidget {
             itemCount: children.length,
             itemBuilder: (context, index) {
               final child = children[index];
-              return ListTile(
-                leading: child['profilePic'] != null
-                    ? CircleAvatar(
-                  backgroundImage: NetworkImage(child['profilePic']),
-                )
-                    : CircleAvatar(
-                  child: Icon(Icons.child_care),
-                ),
-                title: Text(child['name']),
-                subtitle: Text(
-                    'Age: ${child['age']} | Level: ${child['level']} | Preferences: ${child['preferences']}'),
-                onTap: () {
-                  // Navigate to MenuPage with the selected child's name
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MenuPage(selectedChildName: child['name']),
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: Card(
+                  elevation: 8, // Add shadow to the card
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12), // Rounded corners
+                  ),
+                  color: Colors.teal.shade50, // Light background for the card
+                  child: ListTile(
+                    leading: child['profilePic'] != null
+                        ? CircleAvatar(
+                      backgroundImage: NetworkImage(child['profilePic']),
+                    )
+                        : CircleAvatar(
+                      child: Icon(
+                        Icons.child_care,
+                        color: Colors.white,
+                      ),
+                      backgroundColor: Colors.teal,
                     ),
-                  );
-                },
+                    title: Text(
+                      child['name'],
+                      style: TextStyle(
+                        fontFamily: 'OpenDyslexic', // Dyslexia-friendly font
+                        fontSize: 18, // Increased font size for title
+                        fontWeight: FontWeight.bold,
+                        color: Colors.teal.shade800,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Age: ${child['age']} ',
+                      style: TextStyle(
+                        fontFamily: 'OpenDyslexic', // Dyslexia-friendly font
+                        fontSize: 14, // Increased font size for subtitle
+                        color: Colors.teal.shade600,
+                      ),
+                    ),
+                    onTap: () {
+                      // Navigate to MenuPage with the selected child's name
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              MenuPage(selectedChildName: child['name']),
+                        ),
+                      );
+                    },
+                  ),
+                ),
               );
             },
           );
@@ -80,4 +134,5 @@ class ViewChildList extends StatelessWidget {
       ),
     );
   }
+
 }

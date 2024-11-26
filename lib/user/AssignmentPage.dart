@@ -1,6 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:dyslearn/ViewAssignmentPage.dart';
+import 'package:dyslearn/user/ViewAssignmentPage.dart';
 import 'package:dyslearn/Parent/UserService.dart'; // Correct import of UserService
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -68,8 +68,11 @@ class AssignmentsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Assignments'),
+        title: Text('Assignments', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'OpenDyslexic')),
+        backgroundColor: Colors.teal, // Teal color for the app bar
+        elevation: 4,
       ),
+      backgroundColor: Colors.teal[50], // Light teal background color
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('assignments') // Assuming global assignments collection
@@ -80,15 +83,16 @@ class AssignmentsPage extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(child: Text('Error: ${snapshot.error}', style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14)));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text('No assignments available.'));
+            return Center(child: Text('No assignments available.', style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14)));
           }
 
           final assignments = snapshot.data!.docs;
 
           return ListView.builder(
+            padding: EdgeInsets.all(10),
             itemCount: assignments.length,
             itemBuilder: (context, index) {
               var assignment = assignments[index];
@@ -102,21 +106,35 @@ class AssignmentsPage extends StatelessWidget {
                   : 'No Type'; // Default value if 'type' is missing
 
               return Card(
-                margin: EdgeInsets.all(8.0),
+                color: Colors.white, // White background for cards
+                margin: EdgeInsets.symmetric(vertical: 8.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 4,
+                shadowColor: Colors.black.withOpacity(0.1),
                 child: ListTile(
-                  title: Text(assignmentData['title'] ?? 'No Title'),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  title: Text(
+                    assignmentData['title'] ?? 'No Title',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, fontFamily: 'OpenDyslexic'),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(assignmentData['description'] ?? 'No Description'),
                       SizedBox(height: 4),
                       Text(
+                        assignmentData['description'] ?? 'No Description',
+                        style: TextStyle(color: Colors.grey[700], fontFamily: 'OpenDyslexic', fontSize: 14),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
                         'Type: $assignmentType', // Display the assignment type
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                        style: TextStyle(fontSize: 14, color: Colors.teal[700], fontFamily: 'OpenDyslexic'),
                       ),
                     ],
                   ),
-                  trailing: Icon(Icons.arrow_forward),
+                  trailing: Icon(Icons.arrow_forward, color: Colors.teal),
                   onTap: () {
                     // Ensure you pass the correct IDs before navigating
                     User? parent = FirebaseAuth.instance.currentUser;

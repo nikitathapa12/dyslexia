@@ -100,6 +100,7 @@ class _ParentLoginPageState extends State<ParentLoginPage> {
                                 controller: _emailController,
                                 decoration: InputDecoration(
                                   labelText: 'Parent Email',
+
                                   border: OutlineInputBorder(),
                                   prefixIcon: Icon(Icons.email, color: Colors.blueGrey),
                                   filled: true,

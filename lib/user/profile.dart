@@ -99,8 +99,8 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
         DocumentReference childDoc = await children.add({
           'name': _nameController.text,
           'age': int.tryParse(_ageController.text) ?? 0,
-          'level': _levelController.text,
-          'preferences': _preferencesController.text,
+          // 'level': _levelController.text,
+          // 'preferences': _preferencesController.text,
           'profilePic': _imageFile != null ? await _uploadProfilePic() : null,
           'createdAt': Timestamp.now(),
         });
@@ -158,7 +158,15 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Create Child Profile'),
+        title: Text(
+          'Create Child Profile',
+          style: TextStyle(
+            fontFamily: 'OpenDyslexic',
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.teal,
         actions: [
           IconButton(
             icon: Icon(Icons.child_care),
@@ -174,17 +182,40 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator(color: Colors.teal))
           : Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              SizedBox(height: 16),
+              SizedBox(height: 20),
+              Text(
+                'Child\'s Information',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'OpenDyslexic',
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.teal.shade700,
+                ),
+              ),
+              SizedBox(height: 30),
               TextFormField(
                 controller: _nameController,
-                decoration: InputDecoration(labelText: 'Child\'s Name'),
+                decoration: InputDecoration(
+                  labelText: 'Child\'s Name',
+                  labelStyle: TextStyle(
+                    fontFamily: 'OpenDyslexic',
+                    fontSize: 14,
+                  ),
+                  filled: true,
+                  fillColor: Colors.teal.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: Icon(Icons.person, color: Colors.teal),
+                ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the child\'s name';
@@ -192,9 +223,22 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
                   return null;
                 },
               ),
+              SizedBox(height: 20),
               TextFormField(
                 controller: _ageController,
-                decoration: InputDecoration(labelText: 'Child\'s Age'),
+                decoration: InputDecoration(
+                  labelText: 'Child\'s Age',
+                  labelStyle: TextStyle(
+                    fontFamily: 'OpenDyslexic',
+                    fontSize: 14,
+                  ),
+                  filled: true,
+                  fillColor: Colors.teal.shade50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  prefixIcon: Icon(Icons.cake, color: Colors.teal),
+                ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -203,39 +247,46 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
                   return null;
                 },
               ),
-              TextFormField(
-                controller: _levelController,
-                decoration: InputDecoration(labelText: 'Dyslexia Level'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the dyslexia level';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: _preferencesController,
-                decoration: InputDecoration(labelText: 'Learning Preferences'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter learning preferences';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 16),
+              SizedBox(height: 20),
+
+
+
+              SizedBox(height: 30),
               ElevatedButton(
                 onPressed: _createChildProfile,
-                child: Text('Create Profile'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal,
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Create Profile',
+                  style: TextStyle(
+                    fontFamily: 'OpenDyslexic',
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              SizedBox(height: 16),
-              if (_gameData != null)
-                Text('Last Game Score: $_gameData'),
+              SizedBox(height: 20),
+              // if (_gameData != null)
+              //   Text(
+              //     'Last Game Score: $_gameData',
+              //     textAlign: TextAlign.center,
+              //     style: TextStyle(
+              //       fontFamily: 'OpenDyslexic',
+              //       fontSize: 14,
+              //       color: Colors.teal.shade800,
+              //     ),
+              //   ),
             ],
           ),
         ),
       ),
     );
   }
+
 }
 

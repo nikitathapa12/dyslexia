@@ -34,7 +34,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Edit Profile'),
+        title: Text('Edit Profile',
+          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),),
         backgroundColor: Colors.teal,
       ),
       body: Padding(
@@ -55,6 +56,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: _nameController,
                   decoration: InputDecoration(
                     labelText: 'Name',
+                    labelStyle: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                     prefixIcon: Icon(Icons.person),
                   ),
                   validator: (value) {
@@ -69,8 +71,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   controller: _emailController,
                   decoration: InputDecoration(
                     labelText: 'Email',
+                    labelStyle: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                     prefixIcon: Icon(Icons.email),
                   ),
+                  style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your email';
@@ -86,15 +90,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         await user!.updateDisplayName(_nameController.text);
                         await user.updateEmail(_emailController.text);
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('Profile updated successfully')));
+                            content: Text('Profile updated successfully',
+                              style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),)));
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to update profile')),
+                          SnackBar(content: Text('Failed to update profile',
+                            style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),)),
                         );
                       }
                     }
                   },
-                  child: Text('Save Changes'),
+                  child: Text('Save Changes',
+                      style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
+                ),
                 ),
               ],
             ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'login_page.dart'; // Import the LoginPage here
+import 'Teacher/login_page.dart'; // Import the LoginPage here
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -65,7 +65,12 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Sign Up')),
+      appBar: AppBar(
+        title: Text(
+          'Sign Up',
+          style: TextStyle(fontFamily: 'OpenDyslexic'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -73,7 +78,10 @@ class _SignUpPageState extends State<SignUpPage> {
           child: Column(
             children: [
               TextFormField(
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  labelStyle: TextStyle(fontFamily: 'OpenDyslexic'),
+                ),
                 keyboardType: TextInputType.emailAddress,
                 onChanged: (value) {
                   setState(() {
@@ -85,7 +93,10 @@ class _SignUpPageState extends State<SignUpPage> {
                 },
               ),
               TextFormField(
-                decoration: InputDecoration(labelText: 'Password'),
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  labelStyle: TextStyle(fontFamily: 'OpenDyslexic'),
+                ),
                 obscureText: true,
                 onChanged: (value) {
                   setState(() {
@@ -102,13 +113,19 @@ class _SignUpPageState extends State<SignUpPage> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _signUp,
-                child: Text('Sign Up'),
+                child: Text(
+                  'Sign Up',
+                  style: TextStyle(fontFamily: 'OpenDyslexic'),
+                ),
               ),
               SizedBox(height: 20),
               if (errorMessage.isNotEmpty)
                 Text(
                   errorMessage,
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontFamily: 'OpenDyslexic',
+                  ),
                 ),
             ],
           ),

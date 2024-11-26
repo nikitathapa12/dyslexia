@@ -203,7 +203,7 @@ class _ColorMatchingGameState extends State<ColorMatchingGame>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Color Matching Game")),
+      appBar: AppBar(title: Text("Color Matching Game", )),
       body: Stack(
         children: [
           Column(
@@ -235,7 +235,8 @@ class _ColorMatchingGameState extends State<ColorMatchingGame>
                 child: Text(
                   'Hint: Drag the same color shopping bag to the kids',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontFamily:'OpenDyslexic',fontSize: 14,
+
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
@@ -267,11 +268,11 @@ class _ColorMatchingGameState extends State<ColorMatchingGame>
                   children: [
                     Text(
                       'Score: $score',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontFamily:'OpenDyslexic',fontSize: 14),
                     ),
                     Text(
                       'Last Score: $lastScore',
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(fontFamily:'OpenDyslexic',fontSize: 14),
                     ),
                   ],
                 ),

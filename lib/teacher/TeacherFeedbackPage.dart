@@ -28,7 +28,7 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
             return Center(
               child: Text(
                 'No feedback available yet.',
-                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 18),
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
               ),
             );
           }
@@ -67,7 +67,7 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
                           'Child: $childUsername',
                           style: TextStyle(
                             fontFamily: 'OpenDyslexic',
-                            fontSize: 18,
+                            fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: Colors.teal[700],
                           ),
@@ -77,7 +77,7 @@ class _TeacherFeedbackPageState extends State<TeacherFeedbackPage> {
                           feedbackText!,
                           style: TextStyle(
                             fontFamily: 'OpenDyslexic',
-                            fontSize: 16,
+                            fontSize: 14,
                             color: Colors.black87,
                           ),
                         ),

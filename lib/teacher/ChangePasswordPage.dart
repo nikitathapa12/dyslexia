@@ -22,7 +22,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Change Password'),
+        title: Text('Change Password',
+            style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),),
         backgroundColor: Colors.teal,
       ),
       body: Padding(
@@ -35,8 +36,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 controller: _oldPasswordController,
                 decoration: InputDecoration(
                   labelText: 'Old Password',
+                  labelStyle: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                   prefixIcon: Icon(Icons.lock),
                 ),
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -50,8 +53,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                 controller: _newPasswordController,
                 decoration: InputDecoration(
                   labelText: 'New Password',
+                  labelStyle: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                   prefixIcon: Icon(Icons.lock),
                 ),
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -77,15 +82,18 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                       await user?.reauthenticateWithCredential(credential);
                       await user?.updatePassword(_newPasswordController.text);
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text('Password updated successfully')));
+                          content: Text('Password updated successfully',
+                            style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),)));
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to update password')),
+                        SnackBar(content: Text('Failed to update password',
+                          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),)),
                       );
                     }
                   }
                 },
-                child: Text('Change Password'),
+                child: Text('Change Password',
+                  style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14),),
               ),
             ],
           ),

@@ -204,14 +204,14 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
                       padding: const EdgeInsets.only(right: 20.0),
                       child: Text(
                         'Score: $score',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic',  color: Colors.white),
                       ),
                     ),
                     Padding(
                       padding: const EdgeInsets.only(right: 20.0),
                       child: Text(
                         'Last Score: $lastScore',
-                        style: TextStyle(fontSize: 24, color: Colors.white),
+                        style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.white),
                       ),
                     ),
                     IconButton(
@@ -241,7 +241,7 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
                           child: Center(
                             child: Text(
                               filledLetters[index] ?? word[index],
-                              style: TextStyle(fontSize: 24),
+                              style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic',),
                             ),
                           ),
                         );
@@ -284,7 +284,7 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
       ),
       child: Text(
         letter,
-        style: TextStyle(fontSize: 24, color: Colors.white),
+        style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.white),
       ),
     );
   }
@@ -302,7 +302,7 @@ class _NextWordGameState extends State<NextWordGame> with SingleTickerProviderSt
           SizedBox(width: 10),
           Text(
             "WORLD!",
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+            style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.blueGrey),
           ),
           SizedBox(width: 10),
           Icon(Icons.tag_faces, size: 50, color: Colors.blueGrey),

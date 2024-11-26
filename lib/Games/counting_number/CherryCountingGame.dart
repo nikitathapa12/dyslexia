@@ -261,7 +261,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
         Text(
           'How many cherries are there?',
           style: TextStyle(
-            fontSize: 26,
+            fontSize: 14,
             fontFamily: 'OpenDyslexic',
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -291,7 +291,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
                     '$option',
                     key: ValueKey<int>(option),
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 14,
                       fontFamily: 'OpenDyslexic',
                       color: Colors.white,
                     ),
@@ -312,7 +312,8 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
         'Correct!',
         style: TextStyle(
           color: Colors.greenAccent,
-          fontSize: 30,
+          fontSize: 14,
+          fontFamily: 'OpenDyslexic',
           fontWeight: FontWeight.bold,
         ),
       )
@@ -320,7 +321,8 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
         'Wrong! Try again.',
         style: TextStyle(
           color: Colors.redAccent,
-          fontSize: 30,
+          fontSize: 14,
+          fontFamily: 'OpenDyslexic',
           fontWeight: FontWeight.bold,
         ),
       );
@@ -332,8 +334,9 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
     return Text(
       countdown,
       style: TextStyle(
-        fontSize: 32,
+        fontSize: 14,
         fontWeight: FontWeight.bold,
+        fontFamily: 'OpenDyslexic',
         color: Colors.white,
       ),
     );
@@ -354,8 +357,9 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
                   Text(
                     'Score',
                     style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      fontFamily: 'OpenDyslexic',
+
                       color: Colors.white,
                     ),
                   ),
@@ -363,8 +367,9 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
                   Text(
                     '$score',
                     style: TextStyle(
-                      fontSize: 60,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+
+                      fontFamily: 'OpenDyslexic',
                       color: Colors.green,
                     ),
                   ),
@@ -372,7 +377,8 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
                   Text(
                     'Last Score: $lastScore',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: 14,
+                      fontFamily: 'OpenDyslexic',
                       color: Colors.white,
                     ),
                   ),
@@ -412,11 +418,11 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
               children: [
                 Text(
                   'Score: $score',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic',fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'Last Score: $lastScore',
-                  style: TextStyle(fontSize: 20, color: Colors.white70),
+                  style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.white70),
                 ),
               ],
             ),

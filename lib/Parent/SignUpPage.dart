@@ -92,7 +92,7 @@ class _ParentSignupPageState extends State<ParentSignupPage> {
                       'Parent Signup',
                       style: TextStyle(
                         fontFamily: 'OpenDyslexic',
-                        fontSize: 32,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
@@ -197,7 +197,7 @@ class _ParentSignupPageState extends State<ParentSignupPage> {
                               ),
                               child: Text(
                                 'SIGN UP',
-                                style: TextStyle(fontSize: 14, color: Colors.white),
+                                style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.white),
                               ),
                             ),
                           ],
@@ -217,6 +217,7 @@ class _ParentSignupPageState extends State<ParentSignupPage> {
                         style: TextStyle(
                           color: Colors.white,
                           fontFamily: 'OpenDyslexic',
+                          fontSize: 14,
                         ),
                       ),
                     ),

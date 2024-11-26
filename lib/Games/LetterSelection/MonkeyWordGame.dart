@@ -226,11 +226,11 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
                     children: [
                       Text(
                         'Score: $score',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.black),
                       ),
                       Text(
                         'Last Score: $lastScore',
-                        style: TextStyle(fontSize: 18, color: Colors.black),
+                        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.black),
                       ),
                     ],
                   ),
@@ -266,7 +266,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
                           child: Center(
                             child: Text(
                               filledLetters[index] ?? word[index],
-                              style: TextStyle(fontSize: 24),
+                              style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic',),
                             ),
                           ),
                         );
@@ -309,7 +309,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
       ),
       child: Text(
         letter,
-        style: TextStyle(fontSize: 24, color: Colors.white),
+        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.white),
       ),
     );
   }
@@ -327,7 +327,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
           SizedBox(width: 10),
           Text(
             "MONKEY!",
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.green),
+            style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.green),
           ),
           SizedBox(width: 10),
           Icon(Icons.tag_faces, size: 50, color: Colors.green),
