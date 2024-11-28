@@ -32,7 +32,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
   }
 
   Future<void> fetchChildData() async {
-    print("fetchChildData function called");
+
     try {
       final parentDoc = await FirebaseFirestore.instance.collection('parents').doc(parentId).get();
       final childDocs = await FirebaseFirestore.instance
@@ -64,16 +64,13 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           .doc(childId);
 
       // Fetch assignments data
+
       final submissionsDocs = await childRef.collection('submissions').get();
       for (var doc in submissionsDocs.docs) {
-        final answerData = doc.data()['answer'] as String;
-        final answerMap = parseAnswerData(answerData); // Parse the answer data
-
-        // Add to the progress list under 'Assignments' category
         progressList.add({
-          'category': 'Assignments', // Category for assignment
-          'assignmentId': doc.data()['assignmentId'], // Directly add assignment ID
-          'answer': answerMap, // Assignment type questions
+          'category': 'Assignments',
+          'assignmentType': doc.data()['assignmentType'] ?? 'No Type', // Assignment type
+          'questionsAndAnswers': doc.data()['answers'] ?? {}, // Questions and submitted answers
           'submittedAt': (doc.data()['submittedAt'] as Timestamp).toDate(), // Submission timestamp
         });
       }
@@ -112,21 +109,66 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
       setState(() => isLoading = false);
     }
   }
-
-  // Helper function to parse the answer string into assignment types and questions
-  Map<String, String> parseAnswerData(String answerData) {
-    Map<String, String> parsedAnswer = {};
-    final regex = RegExp(r'Assignment: "(.*?)" Question: "(.*?)"');  // Adjusted to find assignment types and questions
-    final matches = regex.allMatches(answerData);
-
-    for (final match in matches) {
-      final assignmentType = match.group(1) ?? "Unknown Type";
-      final question = match.group(2) ?? "No Question";
-      parsedAnswer[assignmentType] = question;
-    }
-
-    return parsedAnswer;
+  // Add your showAssignmentDetails method here
+  void showAssignmentDetails(Map<String, dynamic> assignment) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            'Assignment Details',
+            style: TextStyle(fontFamily: 'OpenDyslexic'),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Assignment Type: ${assignment['assignmentType']}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
+                // Check the answers map structure
+                if (assignment['questionsAndAnswers'] != null && assignment['questionsAndAnswers'].isNotEmpty)
+                  ...assignment['questionsAndAnswers'].entries.map((entry) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Question: ${entry.key}',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Answer: ${entry.value}',
+                            style: TextStyle(fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                SizedBox(height: 10),
+                Text(
+                  'Submitted At: ${assignment['submittedAt']}',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +178,7 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
           "Progress Report - ${widget.selectedChildName}",
           style: TextStyle(fontFamily: 'OpenDyslexic'),
         ),
-        backgroundColor: Colors.teal, // Soothing color for app bar
+        backgroundColor: Colors.teal,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -156,7 +198,6 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
         itemBuilder: (context, index) {
           final progress = progressList[index];
 
-          // Card for Assignments
           if (progress['category'] == 'Assignments') {
             return Card(
               margin: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
@@ -164,75 +205,21 @@ class _ProgressReportPageState extends State<ProgressReportPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               elevation: 6,
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.assignment, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Text(
-                          "Assignment Details",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'OpenDyslexic',
-                          ),
-                        ),
-                      ],
-                    ),
-                    Divider(color: Colors.grey),
-                    SizedBox(height: 8),
-                    Text(
-                      "Assignment ID: ${progress['assignmentId']}",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'OpenDyslexic',
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      "Questions and Answers:",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'OpenDyslexic',
-                      ),
-                    ),
-                    ...progress['answer'].entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.question_answer,
-                                size: 16, color: Colors.blue),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                "Type: ${entry.key}, Question: ${entry.value}",
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontFamily: 'OpenDyslexic',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                    SizedBox(height: 8),
-                    Text(
-                      "Submitted At: ${progress['submittedAt']}",
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontFamily: 'OpenDyslexic',
-                      ),
-                    ),
-                  ],
+              child: ListTile(
+                leading: Icon(Icons.assignment, color: Colors.orange),
+                title: Text(
+                  "Assignment Type: ${progress['assignmentType']}",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'OpenDyslexic',
+                  ),
                 ),
+                subtitle: Text(
+                  "Submitted At: ${progress['submittedAt']}",
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                onTap: () => showAssignmentDetails(progress),
               ),
             );
           }

@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:confetti/confetti.dart';
+import 'package:dyslearn/games.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:vibration/vibration.dart';
@@ -80,67 +81,75 @@ class _ColorMatchingGameState extends State<ColorMatchingGame>
 
   // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
-    final doc = await firestore.collection('games').doc('ColorMatching').get();
-    if (doc.exists) {
-      setState(() {
-        lastScore = doc['lastScore'] ?? 0; // Use a default value if lastScore doesn't exist
-      });
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return;
+
+    try {
+      final childDocs = await firestore
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
+          .get();
+
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
+
+        final gameDoc = await firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Color Matching')
+            .doc('gameData')
+            .get();
+
+        if (gameDoc.exists) {
+          setState(() {
+            lastScore = gameDoc['lastScore'] ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching last score: $e");
     }
   }
 
   // Save the current score to Firebase
   Future<void> saveScoreToFirebase() async {
     User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) {
-      print("No parent is logged in.");
-      return;
-    }
+    if (parent == null) return;
 
     try {
-      // Access the parent's document
-      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-
-
-      // Retrieve the first child document in the 'children' subcollection
-      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
-      if (childrenSnapshot.docs.isEmpty) {
-        print("No children found for this parent.");
-        return;
-      }
-
-      // Assuming you want to use the first child (or modify as needed)
-      print("child name: ");
-      print(widget.selectedChildName);
-
-      final childDocs = await FirebaseFirestore.instance
+      final childDocs = await firestore
           .collection('parents')
           .doc(parent.uid)
           .collection('children')
-          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      String childId = childDocs.docs.first.id; // Extract the childId
-      print("retrieved child id: $childId");
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
 
+        DocumentReference gameDoc = firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Color Matching')
+            .doc('gameData');
 
-      // Reference to the gameData subcollection under the child's document
-      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Color Matching');
-      print("childId: $childId");
-      // Prepare game data to store in Firestore
-      Map<String, dynamic> gameData = {
-        'lastScore': score,  // Current score
-        'totalScore': FieldValue.increment(score),  // Increment total score by the current score
-        'attempts': FieldValue.increment(1),  // Increment attempts by 1
-        'lastUpdated': Timestamp.now(),
-      };
-      print("sent data: ");
-      print(gameData.entries);
-      // Add or update game data document in the 'gameData' subcollection
-      await gameDataCollection.add(gameData);
+        await gameDoc.set({
+          'lastScore': score,
+          'totalScore': FieldValue.increment(score),
+          'attempts': FieldValue.increment(1),
+          'lastUpdated': Timestamp.now(),
+        }, SetOptions(merge: true));
 
-      print("Score saved to Firebase successfully!");
+        print("Score saved successfully!");
+      }
     } catch (e) {
-      print("Error saving score to Firebase: $e");
+      print("Error saving score: $e");
     }
   }
 
@@ -177,8 +186,17 @@ class _ColorMatchingGameState extends State<ColorMatchingGame>
         score += 1;
       });
 
+      // Check if all matches are complete
       if (!_kidHasBag.contains(false)) {
-        saveScoreToFirebase();
+        saveScoreToFirebase(); // Save the score before navigating
+
+        // Navigate to the GamesPage
+        Future.delayed(Duration(seconds: 1), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => GamesPage()),
+          );
+        });
       }
     } else {
       _playSound('incorrect.mp3');
@@ -186,6 +204,7 @@ class _ColorMatchingGameState extends State<ColorMatchingGame>
       _vibrateFeedback();
     }
   }
+
 
   void _showHintMessage() {
     setState(() {

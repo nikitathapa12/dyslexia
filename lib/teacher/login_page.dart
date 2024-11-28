@@ -26,13 +26,21 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _signIn() async {
     try {
+      if (_emailController.text.trim() != "nikita1@gmail.com") {
+        // Block login for any email other than the teacher's email
+        throw FirebaseAuthException(
+          code: 'invalid-email',
+          message: 'Only the teacher email can log in.',
+        );
+      }
+
       final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
 
       if (userCredential.user != null) {
-        // Navigate to ProfilePage after successful login
+        // Navigate to TeacherDashboard after successful login
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => TeacherDashboard()),
@@ -44,6 +52,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -104,22 +113,8 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       SizedBox(height: 10),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            // Handle forget password action
-                          },
-                          child: Text(
-                            'Forget Password?',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontFamily: 'OpenDyslexic',
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20),
+
+
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           padding: EdgeInsets.symmetric(vertical: 14, horizontal: 50),
@@ -146,21 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                       SizedBox(height: 20),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => SignUpPage()),
-                          );
-                        },
-                        child: Text(
-                          'Don\'t have an account? Sign Up',
-                          style: TextStyle(
-                            fontFamily: 'OpenDyslexic',
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ),
+
                     ],
                   ),
                 ),

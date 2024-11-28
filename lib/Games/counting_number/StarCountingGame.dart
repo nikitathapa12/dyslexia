@@ -54,53 +54,74 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
     if (parent == null) return;
 
     try {
-      DocumentSnapshot doc = await firestore
+      final childDocs = await firestore
           .collection('parents')
           .doc(parent.uid)
-          .collection('Cherry Counting')
-          .doc('GameData')
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      if (doc.exists) {
-        setState(() {
-          lastScore = doc['lastScore'] ?? 0;
-        });
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
+
+        final gameDoc = await firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Star Counting')
+            .doc('gameData')
+            .get();
+
+        if (gameDoc.exists) {
+          setState(() {
+            lastScore = gameDoc['lastScore'] ?? 0;
+          });
+        }
       }
     } catch (e) {
-      debugPrint("Error fetching last score: $e");
+      print("Error fetching last score: $e");
     }
   }
 
+  // Save the current score to Firestore
   Future<void> saveScoreToFirebase() async {
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) return;
 
     try {
-      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-
-      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
-      if (childrenSnapshot.docs.isEmpty) return;
-
-      final childDocs = await parentDoc
+      final childDocs = await firestore
+          .collection('parents')
+          .doc(parent.uid)
           .collection('children')
           .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      if (childDocs.docs.isEmpty) return;
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
 
-      String childId = childDocs.docs.first.id;
+        DocumentReference gameDoc = firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Star Counting')
+            .doc('gameData');
 
-      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Cherry Counting');
-      await gameDataCollection.add({
-        'lastScore': score,
-        'totalScore': FieldValue.increment(score),
-        'attempts': FieldValue.increment(1),
-        'lastUpdated': Timestamp.now(),
-      });
+        await gameDoc.set({
+          'lastScore': score,
+          'totalScore': FieldValue.increment(score),
+          'attempts': FieldValue.increment(1),
+          'lastUpdated': Timestamp.now(),
+        }, SetOptions(merge: true));
+
+        print("Score saved successfully!");
+      }
     } catch (e) {
-      debugPrint("Error saving score to Firebase: $e");
+      print("Error saving score: $e");
     }
   }
+
 
   void _generateNewRound() {
     if (roundsPlayed >= 5) {

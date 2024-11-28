@@ -11,40 +11,36 @@ import 'package:flutter_tts/flutter_tts.dart';
 class GiftMatchingPage extends StatefulWidget {
   final String? selectedChildName;
 
+
   GiftMatchingPage({this.selectedChildName});
 
   @override
   _GiftMatchingPageState createState() => _GiftMatchingPageState();
 }
 
-class _GiftMatchingPageState extends State<GiftMatchingPage>
-    with SingleTickerProviderStateMixin {
-  List<Color> giftColors = [
-    Colors.red,
-    Colors.red,
-    Colors.green,
-    Colors.green,
-    Colors.blue,
-    Colors.blue,
-    Colors.purple,
-    Colors.purple,
-    Colors.orange,
-    Colors.orange,
-    Colors.yellow,
-    Colors.yellow,
+class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerProviderStateMixin {
+  List<String> giftImages = [
+    'assets/images/gift_red.png', 'assets/images/gift_red.png',
+    'assets/images/gift_green.png', 'assets/images/gift_green.png',
+    'assets/images/gift_blue.png', 'assets/images/gift_blue.png',
+    'assets/images/gift_purple.png', 'assets/images/gift_purple.png',
+    'assets/images/gift_orange.png', 'assets/images/gift_orange.png',
+    'assets/images/gift_yellow.png', 'assets/images/gift_yellow.png',
   ];
 
   List<bool> matched = List.generate(12, (index) => false);
   late ConfettiController _confettiController;
-  Color? selectedColor;
+  String? selectedGiftImage;
   int? selectedIndex;
   int score = 0;
+
+  int lastScore = 0; // New field for last score
+  int attempts = 0;
   late AudioPlayer _audioPlayer;
   bool isHintActive = false;
   late SharedPreferences prefs;
   late FlutterTts flutterTts;
   bool _isConfettiPlaying = false; // Track confetti animation state
-
 
   List<bool> opening = List.generate(12, (index) => false);
   final firestore = FirebaseFirestore.instance;
@@ -55,7 +51,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     _confettiController = ConfettiController(duration: Duration(seconds: 2));
     _audioPlayer = AudioPlayer();
     flutterTts = FlutterTts();
-    giftColors.shuffle();
+    giftImages.shuffle();
 
     _initializePreferences();
     fetchLastScore();
@@ -69,47 +65,74 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   }
 
   Future<void> fetchLastScore() async {
-    final doc = await firestore.collection('games').doc('Gift Matching').get();
-    if (doc.exists) {
-      setState(() {
-        score = doc['lastScore'] ?? 0;
-      });
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) return;
+
+    try {
+      final childDocs = await firestore
+          .collection('parents')
+          .doc(parent.uid)
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
+          .get();
+
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
+
+        final gameDoc = await firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Gift Matching')
+            .doc('gameData')
+            .get();
+
+        if (gameDoc.exists) {
+          setState(() {
+            lastScore = gameDoc['lastScore'] ?? 0;
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching last score: $e");
     }
   }
 
   Future<void> saveScoreToFirebase() async {
     User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) {
-      print("No parent is logged in.");
-      return;
-    }
+    if (parent == null) return;
 
     try {
-      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-      QuerySnapshot childrenSnapshot = await parentDoc
+      final childDocs = await firestore
+          .collection('parents')
+          .doc(parent.uid)
           .collection('children')
           .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      if (childrenSnapshot.docs.isEmpty) {
-        print("No matching child found.");
-        return;
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
+
+        DocumentReference gameDoc = firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Gift Matching')
+            .doc('gameData');
+
+        await gameDoc.set({
+          'lastScore': score,
+          'totalScore': FieldValue.increment(score),
+          'attempts': FieldValue.increment(1),
+          'lastUpdated': Timestamp.now(),
+        }, SetOptions(merge: true));
+
+        print("Score saved successfully!");
       }
-
-      DocumentReference childDoc = childrenSnapshot.docs.first.reference;
-      CollectionReference gameDataCollection = childDoc.collection('Gift Matching');
-
-      Map<String, dynamic> gameData = {
-        'lastScore': score,
-        'totalScore': FieldValue.increment(score),
-        'attempts': FieldValue.increment(1),
-        'lastUpdated': Timestamp.now(),
-      };
-
-      await gameDataCollection.add(gameData);
-      print("Score saved successfully!");
     } catch (e) {
-      print("Error saving score to Firebase: $e");
+      print("Error saving score: $e");
     }
   }
 
@@ -128,21 +151,21 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
   void _onGiftTap(int index) {
     if (matched[index] || isHintActive) return;
 
-    if (selectedColor == null) {
+    if (selectedGiftImage == null) {
       setState(() {
-        selectedColor = giftColors[index];
+        selectedGiftImage = giftImages[index];
         selectedIndex = index;
       });
-      _speakColor(giftColors[index]);
+      _speakGift(giftImages[index]);
     } else {
-      if (giftColors[index] == selectedColor && selectedIndex != index) {
+      if (giftImages[index] == selectedGiftImage && selectedIndex != index) {
         _playSound('assets/audio/correct.mp3');
         setState(() {
           matched[index] = true;
           matched[selectedIndex!] = true;
           opening[selectedIndex!] = true;
           opening[index] = true;
-          selectedColor = null;
+          selectedGiftImage = null;
           selectedIndex = null;
           score += 1;
         });
@@ -168,7 +191,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
       } else {
         _playSound('assets/audio/incorrect.mp3');
         setState(() {
-          selectedColor = null;
+          selectedGiftImage = null;
           selectedIndex = null;
         });
       }
@@ -180,8 +203,6 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
       _navigateToGameOverScreen();
     }
   }
-
-
 
   void _playSound(String path) async {
     try {
@@ -199,9 +220,9 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
       isHintActive = true;
     });
 
-    for (int i = 0; i < giftColors.length; i++) {
-      for (int j = i + 1; j < giftColors.length; j++) {
-        if (giftColors[i] == giftColors[j] && !matched[i] && !matched[j]) {
+    for (int i = 0; i < giftImages.length; i++) {
+      for (int j = i + 1; j < giftImages.length; j++) {
+        if (giftImages[i] == giftImages[j] && !matched[i] && !matched[j]) {
           setState(() {
             opening[i] = true;
             opening[j] = true;
@@ -238,7 +259,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
       score = 0;
       matched = List.generate(12, (index) => false);
       opening = List.generate(12, (index) => false);
-      giftColors.shuffle();
+      giftImages.shuffle();
     });
     Navigator.pop(context);
   }
@@ -254,16 +275,16 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
     );
   }
 
-  void _speakColor(Color color) async {
-    String colorName = '';
-    if (color == Colors.red) colorName = 'Red';
-    if (color == Colors.green) colorName = 'Green';
-    if (color == Colors.blue) colorName = 'Blue';
-    if (color == Colors.purple) colorName = 'Purple';
-    if (color == Colors.orange) colorName = 'Orange';
-    if (color == Colors.yellow) colorName = 'Yellow';
+  void _speakGift(String giftImage) async {
+    String giftName = '';
+    if (giftImage.contains('red')) giftName = 'Red';
+    if (giftImage.contains('green')) giftName = 'Green';
+    if (giftImage.contains('blue')) giftName = 'Blue';
+    if (giftImage.contains('purple')) giftName = 'Purple';
+    if (giftImage.contains('orange')) giftName = 'Orange';
+    if (giftImage.contains('yellow')) giftName = 'Yellow';
 
-    await flutterTts.speak(colorName);
+    await flutterTts.speak(giftName);
   }
 
   @override
@@ -284,64 +305,90 @@ class _GiftMatchingPageState extends State<GiftMatchingPage>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Score: $score',
-                      style: TextStyle(color: Colors.white, fontFamily:'OpenDyslexic',fontSize: 14),
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.lightbulb_outline, color: Colors.yellow),
-                    onPressed: _useHint,
-                  ),
-                  GridView.builder(
-                    padding: EdgeInsets.all(12),
-                    shrinkWrap: true,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      childAspectRatio: 1,
-                    ),
-                    itemCount: giftColors.length,
-                    itemBuilder: (context, index) {
-                      return GestureDetector(
-                        onTap: () => _onGiftTap(index),
-                        child: AnimatedScale(
-                          scale: opening[index] ? 1.1 : 1.0,
-                          duration: Duration(milliseconds: 200),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: matched[index]
-                                      ? Colors.transparent
-                                      : giftColors[index],
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.white, width: 2),
-                                ),
-                              ),
-                              if (!matched[index])
-                                Text(
-                                  '🎁',
-                                  style: TextStyle(fontSize: 32, color: Colors.white),
-                                ),
-                            ],
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Hint icon at the top
+                      IconButton(
+                        icon: Icon(Icons.lightbulb, color: Colors.orange, size: 32),
+                        onPressed: isHintActive ? null : _useHint, // Disable if hint is active
+                      ),
+                      // Score and Last Score Display
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.blueAccent, Colors.greenAccent],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.2), spreadRadius: 4, blurRadius: 6)
+                          ],
                         ),
-                      );
-                    },
+                        child: Row(
+                          children: [
+                            Text(
+                              'Score: $score  ',
+                              style: TextStyle(fontSize: 18, color: Colors.white),
+                            ),
+                            Text(
+                              'Last: ${prefs.getInt('lastScore') ?? 0}', // Display last score
+                              style: TextStyle(fontSize: 16, color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  // Gift grid view
+                  Center(
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 4,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: giftImages.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () => _onGiftTap(index),
+                          child: AnimatedOpacity(
+                            opacity: matched[index] ? 0.2 : 1,
+                            duration: Duration(milliseconds: 300),
+                            child: AnimatedContainer(
+                              duration: Duration(milliseconds: 300),
+                              decoration: BoxDecoration(
+                                image: DecorationImage(
+                                  image: AssetImage(giftImages[index]),
+                                  fit: BoxFit.cover,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+          ConfettiWidget(
+            confettiController: _confettiController,
+            blastDirectionality: BlastDirectionality.explosive,
+            shouldLoop: false,
+            colors: [Colors.red, Colors.blue, Colors.green, Colors.yellow],
+          ),
         ],
       ),
     );
   }
+
 }

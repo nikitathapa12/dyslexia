@@ -19,8 +19,6 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
 
   final List<String> assignmentTypes = [
     'Matching Words with Images',
-
-
     'Games and Quizzes',
     'Matching Word with Picture',
     'Fill the First Letter',
@@ -256,7 +254,7 @@ class _TeacherAddAssignmentPageState extends State<TeacherAddAssignmentPage> {
               decoration: InputDecoration(
                 labelText: 'Assignment Type',
               ),
-                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14,)
+                style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14, color: Colors.black,)
             ),
             SizedBox(height: 16),
             // Questions

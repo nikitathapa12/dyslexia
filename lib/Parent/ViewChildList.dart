@@ -1,3 +1,4 @@
+import 'package:dyslearn/user/EditChildProfile.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,12 +23,27 @@ class ViewChildList extends StatelessWidget {
     // Map Firestore data to a list of maps
     return childrenSnapshot.docs.map((doc) {
       return {
+        'id': doc.id, // Include document ID for deletion
         'name': doc['name'],
         'age': doc['age'],
-
         'profilePic': doc['profilePic'],
       };
     }).toList();
+  }
+
+  Future<void> _deleteChild(String childId) async {
+    User? parent = FirebaseAuth.instance.currentUser;
+    if (parent == null) {
+      throw Exception("User not logged in");
+    }
+
+    // Delete the child's data from Firestore
+    await FirebaseFirestore.instance
+        .collection('parents')
+        .doc(parent.uid)
+        .collection('children')
+        .doc(childId)
+        .delete();
   }
 
   @override
@@ -101,8 +117,8 @@ class ViewChildList extends StatelessWidget {
                     title: Text(
                       child['name'],
                       style: TextStyle(
-                        fontFamily: 'OpenDyslexic', // Dyslexia-friendly font
-                        fontSize: 18, // Increased font size for title
+                        fontFamily: 'OpenDyslexic',
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: Colors.teal.shade800,
                       ),
@@ -110,11 +126,66 @@ class ViewChildList extends StatelessWidget {
                     subtitle: Text(
                       'Age: ${child['age']} ',
                       style: TextStyle(
-                        fontFamily: 'OpenDyslexic', // Dyslexia-friendly font
-                        fontSize: 14, // Increased font size for subtitle
+                        fontFamily: 'OpenDyslexic',
+                        fontSize: 14,
                         color: Colors.teal.shade600,
                       ),
                     ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blueAccent), // Edit icon
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditChildProfile(
+                                  childId: child['id'], // Pass child ID
+                                  name: child['name'],  // Pass child name
+                                  age: child['age'],    // Pass child age
+                                  // Pass profile picture URL
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.redAccent), // Delete icon
+                          onPressed: () async {
+                            bool confirm = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text('Delete Child'),
+                                content: Text('Are you sure you want to delete ${child['name']}?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(false),
+                                    child: Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(true),
+                                    child: Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            ) ?? false;
+
+                            if (confirm) {
+                              await _deleteChild(child['id']);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('${child['name']} has been deleted.'),
+                                  backgroundColor: Colors.teal,
+                                ),
+                              );
+                              (context as Element).reassemble(); // Refresh the widget
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+
                     onTap: () {
                       // Navigate to MenuPage with the selected child's name
                       Navigator.push(
@@ -134,5 +205,4 @@ class ViewChildList extends StatelessWidget {
       ),
     );
   }
-
 }

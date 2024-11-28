@@ -101,9 +101,10 @@ class AssignmentsPage extends StatelessWidget {
               var assignmentData = assignment.data() as Map<String, dynamic>;
 
               // Safely access the 'type' field, checking if it exists
-              String assignmentType = assignmentData.containsKey('type')
-                  ? assignmentData['type']
-                  : 'No Type'; // Default value if 'type' is missing
+              String assignmentType = assignmentData.containsKey('assignmentType')
+                  ? assignmentData['assignmentType']
+                  : 'No Type'; // Default value if 'assignmentType' is missing
+// Default value if 'type' is missing
 
               return Card(
                 color: Colors.white, // White background for cards

@@ -1,26 +1,40 @@
 import 'package:dyslearn/Games/LetterSelection/LetterSelectionGame.dart';
-import 'package:dyslearn/Games/color_recognition_game/ColorMatchingGame.dart';
 import 'package:dyslearn/Games/color_recognition_game/ColorRecognition.dart';
 import 'package:dyslearn/Games/counting_number/CherryCountingGame.dart';
-import 'package:dyslearn/Games/counting_number/CountingNumber.dart';
-import 'package:dyslearn/Games/counting_number/StarCountingGame.dart';
 import 'package:flutter/material.dart';
+import 'package:dyslearn/MenuPage.dart'; // Import your MenuPage
 
 class GamesPage extends StatelessWidget {
   final String? selectedChildName;
 
-
   GamesPage({this.selectedChildName});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'Educational Games',
-          style: TextStyle(fontFamily: 'OpenDyslexic', fontSize: 14, color: Colors.white,),
+          style: TextStyle(
+            fontFamily: 'OpenDyslexic',
+            fontSize: 14,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: Colors.teal,
-        elevation: 4,// Calm, soothing color
+        elevation: 4,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () {
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => MenuPage( selectedChildName:'')),
+              );
+            },
+          ),
+        ],
       ),
       body: Container(
         padding: const EdgeInsets.all(16.0),
@@ -28,7 +42,10 @@ class GamesPage extends StatelessWidget {
           image: DecorationImage(
             image: AssetImage('assets/images/dyslexia_friendly_bg.png'),
             fit: BoxFit.cover,
-            colorFilter: ColorFilter.mode(Colors.white.withOpacity(0.9), BlendMode.dstATop),
+            colorFilter: ColorFilter.mode(
+              Colors.white.withOpacity(0.9),
+              BlendMode.dstATop,
+            ),
           ),
         ),
         child: Column(
@@ -40,7 +57,10 @@ class GamesPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ColorRecognitionGame(selectedChildName: selectedChildName,)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ColorRecognitionGame(selectedChildName: selectedChildName),
+                  ),
                 );
               },
             ),
@@ -50,7 +70,10 @@ class GamesPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LetterSelectionGame(selectedChildName: selectedChildName,)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        LetterSelectionGame(selectedChildName: selectedChildName),
+                  ),
                 );
               },
             ),
@@ -60,7 +83,10 @@ class GamesPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => CherryCountingGame(selectedChildName: selectedChildName,)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        CherryCountingGame(selectedChildName: selectedChildName),
+                  ),
                 );
               },
             ),

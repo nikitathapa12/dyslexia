@@ -53,6 +53,31 @@ class _StudentViewPageState extends State<StudentViewPage> {
     }
   }
 
+
+  Future<void> _deleteChild(String parentId, String childId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('parents')
+          .doc(parentId)
+          .collection('children')
+          .doc(childId)
+          .delete();
+
+      setState(() {
+        _children.removeWhere((child) => child['childId'] == childId);
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Child deleted successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error deleting child: $e')),
+      );
+    }
+  }
+
+
   @override
   void initState() {
     super.initState();
@@ -81,7 +106,7 @@ class _StudentViewPageState extends State<StudentViewPage> {
               'Total Students: ${_children.length}',
               style: TextStyle(
                 fontFamily: 'OpenDyslexic',
-                fontSize: 18,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -107,7 +132,7 @@ class _StudentViewPageState extends State<StudentViewPage> {
                         username,
                         style: TextStyle(
                           fontFamily: 'OpenDyslexic',
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -115,13 +140,23 @@ class _StudentViewPageState extends State<StudentViewPage> {
                         'Parent Email: $parentEmail',
                         style: TextStyle(fontFamily: 'OpenDyslexic'),
                       ),
-                      trailing: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                      trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                      IconButton(
+                      icon: Icon(Icons.delete, color: Colors.red),
+                      onPressed: () {
+                        _deleteChild(
+                            child['parentId'], child['childId']);
+                      },
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                      ),
                         onPressed: () {
                           _navigateToProgressPage(child['parentId'], child['childId'], username);
                         },
@@ -134,6 +169,8 @@ class _StudentViewPageState extends State<StudentViewPage> {
                           ),
                         ),
                       ),
+                    ],
+                    ),
                     ),
                   );
                 },
@@ -239,6 +276,8 @@ class _ProgressPageState extends State<ProgressPage> {
 
     return parsedAnswer;
   }
+
+
 
   @override
   void initState() {

@@ -8,13 +8,14 @@ class CatWordGame extends StatefulWidget {
   final String? selectedChildName;
 
   CatWordGame({this.selectedChildName});
+
   @override
   _CatWordGameState createState() => _CatWordGameState();
 }
 
 class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStateMixin {
   final String word = "CAT"; // The word to fill
-  List<String> letters = ['A', 'T', 'C']; // Letters to drag
+  List<String> letters = ['A', 'T', 'C']; // Letters to select
   late List<String?> filledLetters; // Track filled letters
   late AnimationController _controller;
   late FirebaseFirestore firestore; // Firestore instance
@@ -26,7 +27,6 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   int score = 0;
   int lastScore = 0;
 
-
   @override
   void initState() {
     super.initState();
@@ -35,7 +35,6 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       duration: const Duration(seconds: 1),
       vsync: this,
     );
-
 
     firestore = FirebaseFirestore.instance;
     _playBackgroundMusic(); // Start background music
@@ -53,20 +52,33 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
     User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) return; // No user logged in
+    if (parent == null) return;
 
     try {
-      DocumentSnapshot doc = await firestore
+      final childDocs = await firestore
           .collection('parents')
           .doc(parent.uid)
-          .collection('Cat Word Game')
-          .doc('GameData')
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      if (doc.exists) {
-        setState(() {
-          lastScore = doc['lastScore'] ?? 0;
-        });
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
+
+        final gameDoc = await firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Cat Word Game')
+            .doc('gameData')
+            .get();
+
+        if (gameDoc.exists) {
+          setState(() {
+            lastScore = gameDoc['lastScore'] ?? 0;
+          });
+        }
       }
     } catch (e) {
       print("Error fetching last score: $e");
@@ -75,7 +87,6 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
 
   // Save the current score to Firebase
   Future<void> saveScoreToFirebase() async {
-    // Get the currently logged-in parent's ID
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) {
       print("No parent is logged in.");
@@ -83,48 +94,35 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
     }
 
     try {
-      // Access the parent's document
-      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-
-      // Retrieve the first child document in the 'children' subcollection
-      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
-      if (childrenSnapshot.docs.isEmpty) {
-        print("No children found for this parent.");
-        return;
-      }
-
-      // Assuming you want to use the first child (or modify as needed)
-      print("child name: ");
-      print(widget.selectedChildName);
-
-      final childDocs = await FirebaseFirestore.instance
+      final childDocs = await firestore
           .collection('parents')
           .doc(parent.uid)
           .collection('children')
-          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      String childId = childDocs.docs.first.id; // Extract the childId
-      print("retrieved child id: $childId");
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
 
+        DocumentReference gameDoc = firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Cat Word Game')
+            .doc('gameData');
 
-      CollectionReference gameDataCollection = parentDoc
-          .collection('children')
-          .doc(childId)
-          .collection('Cat Word Game');
+        await gameDoc.set({
+          'lastScore': score,
+          'totalScore': FieldValue.increment(score),
+          'attempts': FieldValue.increment(1),
+          'lastUpdated': Timestamp.now(),
+        }, SetOptions(merge: true));
 
-      Map<String, dynamic> gameData = {
-        'lastScore': score,
-        'totalScore': FieldValue.increment(score),
-        'attempts': FieldValue.increment(1),
-        'lastUpdated': Timestamp.now(),
-      };
-
-      await gameDataCollection.add(gameData);
-
-      print("Score saved to Firebase successfully!");
+        print("Score saved to Firebase successfully!");
+      }
     } catch (e) {
-      print("Error saving score to Firebase: $e");
+      print("Error saving score: $e");
     }
   }
 
@@ -138,14 +136,14 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
     await _audioPlayer.play(AssetSource('audio/$soundFile.mp3')); // Play sound from assets
   }
 
-  // Handle the drop event
-  void _onLetterDropped(String letter, int index) {
+  // Handle letter tap event
+  void _onLetterTapped(String letter, int index) {
     setState(() {
       filledLetters[index] = letter; // Fill the letter in the word
       letters.remove(letter); // Remove the letter from the pool
       score += 1;
 
-      // Play phonics sound for the dropped letter
+      // Play phonics sound for the tapped letter
       _playSound(letter.toLowerCase());
 
       if (_isWordCompleted()) {
@@ -184,7 +182,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       if (filledLetters[i] == null) {
         String correctLetter = word[i];
         if (letters.contains(correctLetter)) {
-          _onLetterDropped(correctLetter, i);
+          _onLetterTapped(correctLetter, i); // Use the hint
           break; // Use only one hint at a time
         }
       }
@@ -195,7 +193,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   void _navigateToNextGame() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MonkeyWordGame(selectedChildName: widget.selectedChildName,)),
+      MaterialPageRoute(builder: (context) => MonkeyWordGame(selectedChildName: widget.selectedChildName)),
     );
   }
 
@@ -231,7 +229,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
                       ),
                       Text(
                         'Last Score: $lastScore',
-                        style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic',color: Colors.black),
+                        style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', color: Colors.black),
                       ),
                     ],
                   ),
@@ -252,86 +250,52 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   ...List.generate(word.length, (index) {
-                    return DragTarget<String>(
-                      builder: (context, candidateData, rejectedData) {
-                        return AnimatedContainer(
-                          duration: Duration(milliseconds: 300),
-                          width: 50,
-                          height: 50,
-                          margin: EdgeInsets.all(5),
-                          decoration: BoxDecoration(
-                            color: filledLetters[index] != null ? Colors.lightGreen : Colors.white,
-                            border: Border.all(color: Colors.black),
-                            borderRadius: BorderRadius.circular(10),
+                    return GestureDetector(
+                      onTap: () => _onLetterTapped(letters.firstWhere((letter) => letter == word[index]), index),
+                      child: AnimatedContainer(
+                        duration: Duration(milliseconds: 300),
+                        width: 50,
+                        height: 50,
+                        margin: EdgeInsets.all(5),
+                        decoration: BoxDecoration(
+                          color: filledLetters[index] != null ? Colors.lightGreen : Colors.white,
+                          border: Border.all(color: Colors.black),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            filledLetters[index] ?? word[index],
+                            style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic'),
                           ),
-                          child: Center(
-                            child: Text(
-                              filledLetters[index] ?? word[index],
-                              style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic',),
-                            ),
-                          ),
-                        );
-                      },
-                      onWillAccept: (data) => data == word[index],
-                      onAccept: (data) => _onLetterDropped(data, index),
+                        ),
+                      ),
                     );
                   }),
                 ],
               ),
               SizedBox(height: 20),
+              // Letters to choose from (below the word)
               Wrap(
                 spacing: 10,
-                children: letters.map((letter) {
-                  return Draggable<String>(
-                    data: letter,
-                    child: _buildLetterWidget(letter),
-                    feedback: _buildLetterWidget(letter, isFeedback: true),
-                    childWhenDragging: _buildLetterWidget(letter, isFeedback: true),
+                children: List.generate(letters.length, (index) {
+                  return GestureDetector(
+                    onTap: () => _onLetterTapped(letters[index], filledLetters.indexOf(null)),
+                    child: Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.lightGreen,
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      child: Text(
+                        letters[index],
+                        style: TextStyle(fontSize: 18, fontFamily: 'OpenDyslexic', color: Colors.white),
+                      ),
+                    ),
                   );
-                }).toList(),
+                }),
               ),
-              SizedBox(height: 30),
-              if (_isCompleted) _buildWavingIcons(),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLetterWidget(String letter, {bool isFeedback = false}) {
-    return Container(
-      width: 50,
-      height: 50,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: isFeedback ? Colors.blue : Colors.green,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        letter,
-        style: TextStyle(fontSize: 14,fontFamily: 'OpenDyslexic', color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildWavingIcons() {
-    return ScaleTransition(
-      scale: CurvedAnimation(
-        parent: _controller,
-        curve: Curves.elasticInOut,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.tag_faces, size: 50, color: Colors.green),
-          SizedBox(width: 10),
-          Text(
-            "CAT!",
-            style: TextStyle(fontSize: 14, fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold, color: Colors.green),
-          ),
-          SizedBox(width: 10),
-          Icon(Icons.tag_faces, size: 50, color: Colors.green),
         ],
       ),
     );

@@ -109,7 +109,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     ),
                   ],
                   image: DecorationImage(
-                    image: AssetImage('assets/images/board.png'), // Replace with your blackboard image
+                    image: AssetImage('assets/images/board.png'),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -120,7 +120,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       'Teacher\'s Login',
                       style: TextStyle(
                         fontSize: 14,
-                        fontFamily: 'OpenDyslexic', // Use the chalk-style font you added
+                        fontFamily: 'OpenDyslexic',
                         color: Colors.white,
                       ),
                     ),

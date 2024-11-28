@@ -7,12 +7,12 @@ import 'package:dyslearn/home_page.dart';
 import 'package:dyslearn/user/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Ensure this import is present
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dyslearn/User/AssignmentPage.dart';
 import 'package:dyslearn/games.dart';
 
 class MenuPage extends StatefulWidget {
-  final String selectedChildName; // Added field to store the selected child's name
+  final String selectedChildName;
 
   MenuPage({Key? key, required this.selectedChildName}) : super(key: key);
 
@@ -23,7 +23,7 @@ class MenuPage extends StatefulWidget {
 class _MenuPageState extends State<MenuPage> {
   String _userEmail = '';
   String _parentId = '';
-  Map<String, dynamic> childData = {}; // To store child data fetched from Firestore
+  Map<String, dynamic> childData = {};
 
   @override
   void initState() {
@@ -31,61 +31,55 @@ class _MenuPageState extends State<MenuPage> {
     _loadChildData();
   }
 
-  // Method to fetch user email from Firebase
   Future<void> _loadUserEmail() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       setState(() {
         _userEmail = user.email ?? 'No email available';
-        _parentId = user.uid ?? "";
+        _parentId = user.uid;
       });
     }
   }
 
-  // Method to fetch child data from Firestore based on selectedChildName
   Future<void> _loadChildData() async {
     await _loadUserEmail();
-    try {
-      if (widget.selectedChildName.isEmpty) {
-        throw Exception("Child name is empty");
-      }
+    if (widget.selectedChildName.isNotEmpty) {
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('parents')
+            .doc(_parentId)
+            .collection('children')
+            .where('name', isEqualTo: widget.selectedChildName)
+            .get();
 
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('parents')
-          .doc(_parentId)
-          .collection('children')
-          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
-          .get();
-
-      print("_parentId: $_parentId");
-      // for  {
-      //
-      // }
-      if (querySnapshot.docs.isNotEmpty) {
-        setState(() {
-          childData = querySnapshot.docs.first.data();
-        });
-      } else {
-        print("reached here");
-        print('No child found with name: ${widget.selectedChildName}');
+        if (querySnapshot.docs.isNotEmpty) {
+          setState(() {
+            childData = querySnapshot.docs.first.data();
+          });
+        } else {
+          print('No child found with name: ${widget.selectedChildName}');
+        }
+      } catch (e) {
+        print('Error loading child data: $e');
       }
-    } catch (e) {
-      print('Error loading child data: $e');
     }
   }
 
-  // Method to logout the user
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
     setState(() {
-      _userEmail = ''; // Clear user email after logout
+      _userEmail = ''; // Clear email to indicate logout
     });
-    // Navigate directly to login page after logging out
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => ParentLoginPage()),
+
+    // Show a snackbar or dialog to indicate successful logout
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Logged out successfully'),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -103,9 +97,7 @@ class _MenuPageState extends State<MenuPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => HomePage(),
-                ),
+                MaterialPageRoute(builder: (context) => HomePage()),
               );
             },
           ),
@@ -114,16 +106,10 @@ class _MenuPageState extends State<MenuPage> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => NotificationsPage(), // Navigate to your NotificationsPage
-                ),
+                MaterialPageRoute(builder: (context) => NotificationsPage()),
               );
             },
           ),
-
-
-
-
         ],
       ),
       drawer: _buildDrawer(context),
@@ -151,114 +137,102 @@ class _MenuPageState extends State<MenuPage> {
                   children: [
                     Icon(Icons.person, size: 50, color: Colors.white),
                     SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Welcome',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontFamily: 'OpenDyslexic',
+                    Expanded( // Ensures text doesn't overflow
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Welcome',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontFamily: 'OpenDyslexic',
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          _userEmail,  // Displaying the user email below the welcome text
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontFamily: 'OpenDyslexic',
+                          SizedBox(height: 5),
+                          Text(
+                            _userEmail.isEmpty
+                                ? 'Please login/signup'
+                                : _userEmail,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: 'OpenDyslexic',
+                            ),
+                            overflow: TextOverflow.ellipsis, // Prevents overflow
                           ),
-                          overflow: TextOverflow.ellipsis, // This will ensure long email doesn't overflow
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          'Child: ${widget.selectedChildName}',  // Display selected child's name
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontFamily: 'OpenDyslexic',
+                          SizedBox(height: 5),
+                          Text(
+                            'Child: ${widget.selectedChildName}',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: 'OpenDyslexic',
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
+
               ],
             ),
           ),
-          _buildDrawerItem(
-            context: context,
-            title: 'View Progress',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProgressReportPage(
-                    selectedChildName: widget.selectedChildName,
-                  ),
-                ),
-              );
-            },
-          ),
-          _buildDrawerItem(
-            context: context,
-            title: 'Child Profile',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChildProfilePage(),
-                ),
-              );
-            },
-          ),
-
-          // _buildDrawerItem(
-          //   context: context,
-          //   title: 'Edit Profile',
-          //   onTap: () {
-          //     Navigator.push(
-          //       context,
-          //       MaterialPageRoute(
-          //         builder: (context) => EditChildProfile(childName: '',),
-          //       ),
-          //     );
-          //   },
-          // ),
-          _buildDrawerItem(
-            context: context,
-            title: 'Send Feedback to Teachers',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FeedbackPage(),
-                ),
-              );
-            },
-          ),
-          Divider(),
-          // Login/Signup or Logout button
-          _buildDrawerItem(
-            context: context,
-            title: _userEmail.isEmpty ? 'Login/Signup' : 'Logout',
-            onTap: () {
-              if (_userEmail.isEmpty) {
+          if (!_userEmail.isEmpty) ...[
+            _buildDrawerItem(
+              context: context,
+              title: 'View Progress',
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ParentLoginPage(),
+                    builder: (context) => ProgressReportPage(
+                      selectedChildName: widget.selectedChildName,
+                    ),
                   ),
                 );
-              } else {
-                _logout();
-              }
-            },
-          ),
+              },
+            ),
+            _buildDrawerItem(
+              context: context,
+              title: 'Child Profile',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ChildProfilePage()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              context: context,
+              title: 'Send Feedback to Teachers',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FeedbackPage()),
+                );
+              },
+            ),
+          ] else
+            _buildDrawerItem(
+              context: context,
+              title: 'Login/Signup',
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ParentLoginPage()),
+                );
+              },
+            ),
+          Divider(),
+          if (!_userEmail.isEmpty)
+            _buildDrawerItem(
+              context: context,
+              title: 'Logout',
+              onTap: _logout,
+            ),
         ],
       ),
     );
@@ -287,7 +261,10 @@ class _MenuPageState extends State<MenuPage> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => GamesPage(selectedChildName: widget.selectedChildName)),
+                  MaterialPageRoute(
+                      builder: (context) => GamesPage(
+                          selectedChildName: widget.selectedChildName)),
+
                 );
               },
             ),
@@ -299,88 +276,17 @@ class _MenuPageState extends State<MenuPage> {
               subtitle: 'View your assignments',
               color: Colors.amber,
               onTap: () {
-                print('Navigating with: parentId=${childData['parentId']}, childId=${childData['childId']}');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => AssignmentsPage(
-
                       selectedChildName: widget.selectedChildName,
                     ),
                   ),
                 );
               },
-
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  void _showNotificationDialog(BuildContext context) {
-    // Notification dialog logic
-  }
-
-  Widget _buildAnimatedCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          elevation: 10,
-          child: AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                colors: [color.withOpacity(0.7), color],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(15.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    icon,
-                    color: Colors.white,
-                    size: 60,
-                  ),
-                  SizedBox(height: 10),
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'OpenDyslexic',
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                      fontFamily: 'OpenDyslexic',
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );
@@ -397,6 +303,61 @@ class _MenuPageState extends State<MenuPage> {
         style: TextStyle(fontSize: 18, fontFamily: 'OpenDyslexic'),
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _buildAnimatedCard({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 10,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              colors: [color.withOpacity(0.7), color],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 60),
+                SizedBox(height: 10),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'OpenDyslexic',
+                  ),
+                ),
+                SizedBox(height: 5),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 16,
+                    fontFamily: 'OpenDyslexic',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

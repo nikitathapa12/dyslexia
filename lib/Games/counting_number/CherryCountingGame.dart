@@ -58,21 +58,33 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
   // Load the last score from Firestore
   Future<void> fetchLastScore() async {
     User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) return; // No user logged in
+    if (parent == null) return;
 
     try {
-      DocumentSnapshot doc = await firestore
+      final childDocs = await firestore
           .collection('parents')
           .doc(parent.uid)
-
-          .collection('Cherry Counting')
-          .doc('GameData')
+          .collection('children')
+          .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      if (doc.exists) {
-        setState(() {
-          lastScore = doc['lastScore'] ?? 0;
-        });
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
+
+        final gameDoc = await firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Cherry Counting')
+            .doc('gameData')
+            .get();
+
+        if (gameDoc.exists) {
+          setState(() {
+            lastScore = gameDoc['lastScore'] ?? 0;
+          });
+        }
       }
     } catch (e) {
       print("Error fetching last score: $e");
@@ -81,53 +93,39 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
 
   // Save the current score to Firestore
   Future<void> saveScoreToFirebase() async {
-    // Get the currently logged-in parent's ID
     User? parent = FirebaseAuth.instance.currentUser;
-    if (parent == null) {
-      print("No parent is logged in.");
-      return;
-    }
+    if (parent == null) return;
 
     try {
-      // Access the parent's document
-      DocumentReference parentDoc = firestore.collection('parents').doc(parent.uid);
-
-      // Retrieve the first child document in the 'children' subcollection
-      QuerySnapshot childrenSnapshot = await parentDoc.collection('children').get();
-      if (childrenSnapshot.docs.isEmpty) {
-        print("No children found for this parent.");
-        return;
-      }
-
-      // Assuming you want to use the first child (or modify as needed)
-      print("child name: ");
-      print(widget.selectedChildName);
-
-      final childDocs = await FirebaseFirestore.instance
+      final childDocs = await firestore
           .collection('parents')
           .doc(parent.uid)
           .collection('children')
-          .where('name', isEqualTo: widget.selectedChildName)  // Use the selected child's name
+          .where('name', isEqualTo: widget.selectedChildName)
           .get();
 
-      String childId = childDocs.docs.first.id; // Extract the childId
-      print("retrieved child id: $childId");
+      if (childDocs.docs.isNotEmpty) {
+        String childId = childDocs.docs.first.id;
 
+        DocumentReference gameDoc = firestore
+            .collection('parents')
+            .doc(parent.uid)
+            .collection('children')
+            .doc(childId)
+            .collection('Cherry Counting')
+            .doc('gameData');
 
-      // Reference to the gameData subcollection under the child's document
-      CollectionReference gameDataCollection = parentDoc.collection('children').doc(childId).collection('Cherry Counting');
+        await gameDoc.set({
+          'lastScore': score,
+          'totalScore': FieldValue.increment(score),
+          'attempts': FieldValue.increment(1),
+          'lastUpdated': Timestamp.now(),
+        }, SetOptions(merge: true));
 
-      Map<String, dynamic> gameData = {
-        'lastScore': score,
-        'totalScore': FieldValue.increment(score),
-        'attempts': FieldValue.increment(1),
-        'lastUpdated': Timestamp.now(),
-      };
-
-      await gameDataCollection.add(gameData);
-      print("Score saved to Firebase successfully!");
+        print("Score saved successfully!");
+      }
     } catch (e) {
-      print("Error saving score to Firebase: $e");
+      print("Error saving score: $e");
     }
   }
 

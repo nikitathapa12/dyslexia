@@ -77,14 +77,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                   ),
                 ),
                 child: Text(
-                  'Teacher Menu',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontFamily: 'OpenDyslexic',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                  'Teacher Menu', style: TextStyle(color: Colors.white, fontSize: 24, fontFamily: 'OpenDyslexic', fontWeight: FontWeight.bold,),),
               ),
               _buildDrawerItem(
                 context: context,
