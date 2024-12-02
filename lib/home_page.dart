@@ -1,7 +1,10 @@
-import 'package:dyslearn/AboutPage.dart';
+import 'package:dyslearn/about_page.dart';
+import 'package:dyslearn/parent/font_settings.dart';
 import 'package:flutter/material.dart';
-import 'package:dyslearn/MenuPage.dart';
+import 'package:dyslearn/menu_page.dart';
 import 'package:dyslearn/Teacher/login_page.dart';
+
+
 
 class HomePage extends StatefulWidget {
   @override
@@ -19,6 +22,10 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   // Define the board height and slide distance
   final double _boardHeight = 200.0; // Height of the board
   final double _slideDownDistance = 10.0; // Distance to slide down (adjust as needed)
+
+  // These will be used for font size and style
+  double _fontSize = fontSettingsNotifier.value.fontSize;
+  String _fontStyle = fontSettingsNotifier.value.fontFamily;
 
   @override
   void initState() {
@@ -59,6 +66,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // appBar: AppBar(
+      //   title: Text(
+      //     'Dyslearn',
+      //     style: TextStyle(
+      //       fontSize: _fontSize,
+      //       fontFamily: _fontStyle,
+      //       color: Colors.white,
+      //     ),
+      //   ),
+      //   centerTitle: true,
+      // ),
       body: Stack(
         children: [
           // Background
@@ -210,14 +228,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
             bottom: 5,
             right: 20,
             child: IconButton(
-                onPressed: () {
-                  // Navigate to AboutPage when settings button is pressed
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => AboutPage()), // Navigate to AboutPage
-                  );
-                },
-                icon: Icon(Icons.settings, size: 50, color: Colors.black87),
+              onPressed: () {
+                // Navigate to AboutPage when settings button is pressed
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AboutPage(fontSize: _fontSize, fontStyle: _fontStyle)), // Pass font size and style
+                );
+              },
+              icon: Icon(Icons.settings, size: 50, color: Colors.black87),
             ),
           ),
         ],

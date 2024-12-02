@@ -162,6 +162,7 @@ flutter:
     - assets/images/loading_image.png
     - assets/images/teacher_background.jpg
     - assets/images/bg.png
+    - assets/images/img.png
 
   fonts:
      - family: OpenDyslexic

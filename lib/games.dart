@@ -1,8 +1,10 @@
-import 'package:dyslearn/Games/LetterSelection/LetterSelectionGame.dart';
-import 'package:dyslearn/Games/color_recognition_game/ColorRecognition.dart';
-import 'package:dyslearn/Games/counting_number/CherryCountingGame.dart';
+
+import 'package:dyslearn/Games/color_recognition_game/colorRecognition.dart';
+import 'package:dyslearn/Games/counting_number/cherry_counting_game.dart';
 import 'package:flutter/material.dart';
-import 'package:dyslearn/MenuPage.dart'; // Import your MenuPage
+import 'package:dyslearn/menu_page.dart';
+
+import 'games/letter_selection/letter_selection_game.dart'; // Import your MenuPage
 
 class GamesPage extends StatelessWidget {
   final String? selectedChildName;
@@ -30,7 +32,7 @@ class GamesPage extends StatelessWidget {
 
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => MenuPage( selectedChildName:'')),
+                MaterialPageRoute(builder: (context) => MenuPage( selectedChildName: selectedChildName ?? '')),
               );
             },
           ),

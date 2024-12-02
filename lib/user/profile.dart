@@ -1,6 +1,6 @@
 
-import 'package:dyslearn/Parent/ProgressReportPage.dart';
-import 'package:dyslearn/Parent/ViewChildList.dart';
+import 'package:dyslearn/Parent/progress_report_page.dart';
+import 'package:dyslearn/Parent/view_child_list.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
