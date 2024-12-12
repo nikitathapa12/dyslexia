@@ -172,7 +172,7 @@ class _ChildProfilePageState extends State<ChildProfilePage> {
             icon: Icon(Icons.child_care),
             tooltip: 'View Children',
             onPressed: () {
-              // Navigate to the ViewChildList page
+
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ViewChildList()),

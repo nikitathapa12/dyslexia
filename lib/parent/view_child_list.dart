@@ -53,11 +53,11 @@ class ViewChildList extends StatelessWidget {
         title: Text(
           'Children List',
           style: TextStyle(
-            fontFamily: 'OpenDyslexic', // Dyslexia-friendly font
-            fontSize: 20, // Increased font size for app bar
+            fontFamily: 'OpenDyslexic',
+            fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.teal, // AppBar color
+        backgroundColor: Colors.teal,
         elevation: 4,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -99,9 +99,9 @@ class ViewChildList extends StatelessWidget {
                 child: Card(
                   elevation: 8, // Add shadow to the card
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12), // Rounded corners
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  color: Colors.teal.shade50, // Light background for the card
+                  color: Colors.teal.shade50,
                   child: ListTile(
                     leading: child['profilePic'] != null
                         ? CircleAvatar(
@@ -135,7 +135,7 @@ class ViewChildList extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit, color: Colors.blueAccent), // Edit icon
+                          icon: Icon(Icons.edit, color: Colors.blueAccent),
                           onPressed: () {
                             Navigator.push(
                               context,
@@ -151,7 +151,7 @@ class ViewChildList extends StatelessWidget {
                           },
                         ),
                         IconButton(
-                          icon: Icon(Icons.delete, color: Colors.redAccent), // Delete icon
+                          icon: Icon(Icons.delete, color: Colors.redAccent),
                           onPressed: () async {
                             bool confirm = await showDialog(
                               context: context,

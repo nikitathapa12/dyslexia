@@ -96,8 +96,8 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
       });
 
       widget.submitAssignment(
-        widget.assignmentId, // First argument
-        answers.toString(),  // Second argument
+        widget.assignmentId,
+        answers.toString(),
       );
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Assignment Submitted!')));
@@ -115,7 +115,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
         backgroundColor: Colors.teal,  // Teal background color
        ),
       body: Container(
-        color: Colors.lightBlue[50],  // Soft background color
+        color: Colors.lightBlue[50],
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
@@ -127,7 +127,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'OpenDyslexic',
-                  color: Colors.teal[800],  // Contrast color for the title
+                  color: Colors.teal[800],
                 ),
               ),
               SizedBox(height: 15),
@@ -137,7 +137,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
                   fontSize: 14,
                   fontFamily: 'OpenDyslexic',
                   height: 1.5,
-                  color: Colors.teal[700],  // Slight contrast for description
+                  color: Colors.teal[700],
                 ),
               ),
               SizedBox(height: 25),
@@ -146,7 +146,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
               for (var question in questions)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 20.0),
-                  child: Card(  // Card for separating question and options
+                  child: Card(
                     elevation: 4,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -167,7 +167,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
                           ),
                           SizedBox(height: 15),
 
-                          // Display options as text or image
+
                           for (var option in question['options'] ?? [])
                             if (option['image'] != null && option['image'] is String && option['image'].isNotEmpty)
                               Row(
@@ -214,7 +214,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
                 onPressed: submitAssignment,
                 child: Text(
                   'Submit',
-                  style: TextStyle(color: Colors.white),  // White text color
+                  style: TextStyle(color: Colors.white),
                 ),
                 style: ButtonStyle(
                   backgroundColor: MaterialStateProperty.all<Color>(Colors.teal),
@@ -224,7 +224,7 @@ class _ViewAssignmentPageState extends State<ViewAssignmentPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  foregroundColor: MaterialStateProperty.all<Color>(Colors.white), // Ensure the text is white
+                  foregroundColor: MaterialStateProperty.all<Color>(Colors.white),
                 ),
               ),
 

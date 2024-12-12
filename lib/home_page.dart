@@ -20,8 +20,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   bool _isBoardVisible = false;
 
   // Define the board height and slide distance
-  final double _boardHeight = 200.0; // Height of the board
-  final double _slideDownDistance = 10.0; // Distance to slide down (adjust as needed)
+  final double _boardHeight = 200.0;
+  final double _slideDownDistance = 10.0;
 
   // These will be used for font size and style
   double _fontSize = fontSettingsNotifier.value.fontSize;
@@ -33,14 +33,14 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
 
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 500), // Duration of the slide animation
+      duration: Duration(milliseconds: 500),
     );
 
     // Animation for sliding the blackboard down
     _boardSlideAnimation = Tween<double>(begin: _ropePosition, end: _ropePosition + _slideDownDistance).animate(_controller)
       ..addListener(() {
         setState(() {
-          _boardPosition = _boardSlideAnimation.value; // Update position based on animation
+          _boardPosition = _boardSlideAnimation.value;
         });
       });
   }
@@ -50,7 +50,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       // Pulling the rope up: move the board back up
       _controller.reverse().then((_) {
         setState(() {
-          _isBoardVisible = false; // Update visibility state after animation
+          _isBoardVisible = false;
           _ropePosition = 60.0; // Reset rope position to original
         });
       });
@@ -83,7 +83,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/bg1.png'), // Replace with your actual background
+                image: AssetImage('assets/images/bg1.png'),
                 fit: BoxFit.cover,
               ),
             ),
@@ -101,7 +101,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 }
               },
               child: Image.asset(
-                'assets/images/rope.png', // Replace with a rope image
+                'assets/images/rope.png',
                 height: 300,
                 fit: BoxFit.cover,
               ),
@@ -147,7 +147,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => LoginPage()), // Navigate to LoginPage
+                          MaterialPageRoute(builder: (context) => LoginPage()),
                         );
                       },
                       style: ElevatedButton.styleFrom(

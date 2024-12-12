@@ -14,16 +14,16 @@ class MonkeyWordGame extends StatefulWidget {
 }
 
 class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProviderStateMixin {
-  final String word = "MONKEY"; // The new word to fill
-  List<String> letters = ['Y', 'N', 'E', 'M', 'O', 'K']; // Letters to tap
-  late List<String?> filledLetters; // Track filled letters
+  final String word = "MONKEY";
+  List<String> letters = ['Y', 'N', 'E', 'M', 'O', 'K'];
+  late List<String?> filledLetters;
   late AnimationController _controller;
 
   late FirebaseFirestore firestore; // Firestore instance
 
   bool _isCompleted = false;
-  final AudioPlayer _audioPlayer = AudioPlayer(); // Audio player instance
-  final AudioPlayer _backgroundMusicPlayer = AudioPlayer(); // Background music player
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _backgroundMusicPlayer = AudioPlayer();
 
   int score = 0;
   int lastScore = 0;
@@ -31,7 +31,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    filledLetters = List.generate(word.length, (index) => null); // Initialize filled letters
+    filledLetters = List.generate(word.length, (index) => null);
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -44,8 +44,8 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
 
   @override
   void dispose() {
-    _controller.dispose(); // Clean up the controller
-    _audioPlayer.dispose(); // Dispose audio player for sound effects
+    _controller.dispose();
+    _audioPlayer.dispose();
     _backgroundMusicPlayer.stop(); // top background music
     _stopMusic();
     _backgroundMusicPlayer.dispose(); // Dispose background music player
@@ -134,12 +134,12 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
 
   // Play letter sound (phonics) or word sound
   Future<void> _playSound(String soundFile) async {
-    await _audioPlayer.play(AssetSource('audio/$soundFile.mp3')); // Play sound from assets
+    await _audioPlayer.play(AssetSource('audio/$soundFile.mp3'));
   }
 
 
 
-  // Add this function to stop the background music
+  // function to stop the background music
   Future<void> _stopMusic() async {
     await _backgroundMusicPlayer.stop();
   }
@@ -154,14 +154,14 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
         setState(() {
           filledLetters[i] = letter; // Fill the letter in the word
           letters.remove(letter); // Remove the letter from the pool
-          score += 1; // Increase score
+          score += 1;
 
           // Play phonics sound for the tapped letter
           _playSound(letter.toLowerCase());
 
           if (_isWordCompleted()) {
             _isCompleted = true;
-            _controller.forward(); // Start waving animation
+            _controller.forward();
 
             saveScoreToFirebase(); // Save score to Firestore
 
@@ -170,7 +170,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
 
             // Wait for the last phonics sound to finish before playing "monkey"
             Future.delayed(Duration(seconds: 1), () {
-              _playSound('monkey'); // Play the "monkey" sound after a short delay
+              _playSound('monkey');
 
               // Update scores
               setState(() {
@@ -202,7 +202,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
         String correctLetter = word[i];
         if (letters.contains(correctLetter)) {
           _onLetterTapped(correctLetter); // Tap the correct letter
-          break; // Use only one hint at a time
+          break;
         }
       }
     }
@@ -213,11 +213,11 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
     return Scaffold(
       body: Stack(
         children: [
-          // Background container (GIF can be used here)
+
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage("assets/images/monkey-7751_512.gif"), // GIF as background
+                image: AssetImage("assets/images/monkey-7751_512.gif"),
                 fit: BoxFit.cover,
               ),
             ),
@@ -323,7 +323,7 @@ class _MonkeyWordGameState extends State<MonkeyWordGame> with SingleTickerProvid
       animation: _controller,
       builder: (context, child) {
         return Transform.rotate(
-          angle: _controller.value * 2.0 * 3.14159, // Rotate continuously
+          angle: _controller.value * 2.0 * 3.14159,
           child: Icon(Icons.cached, color: Colors.blue, size: 50),
         );
       },

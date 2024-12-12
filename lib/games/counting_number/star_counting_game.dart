@@ -32,7 +32,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
   void initState() {
     super.initState();
     showHint = false;
-    firestore = FirebaseFirestore.instance; // Initialize Firestore
+    firestore = FirebaseFirestore.instance;
     fetchLastScore(); // Fetch the last saved score
     _scoreAnimationController = AnimationController(
       vsync: this,
@@ -287,7 +287,7 @@ class _StarCountingGameState extends State<StarCountingGame> with TickerProvider
             GestureDetector(
               onTap: () {
                 setState(() {
-                  // Toggle visibility of hint
+
                   showHint = !showHint;
                 });
               },

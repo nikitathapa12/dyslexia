@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DraggableGoodyBag extends StatelessWidget {
-  final Color color; // Now passing color as the data
+  final Color color; //  passing color as the data
   final Widget child;
 
   DraggableGoodyBag({required this.color, required this.child});

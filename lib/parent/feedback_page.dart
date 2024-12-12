@@ -112,7 +112,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            fontFamily: 'OpenDyslexic', // Use OpenDyslexic font here
+            fontFamily: 'OpenDyslexic',
           ),
         ),
         backgroundColor: Colors.teal,
@@ -122,7 +122,7 @@ class _FeedbackPageState extends State<FeedbackPage> {
           ? Center(child: CircularProgressIndicator())
           : Container(
         decoration: BoxDecoration(
-          color: Color(0xFFE0F7FA), // Soft pastel blue background for dyslexic-friendly design
+          color: Color(0xFFE0F7FA),
         ),
         padding: EdgeInsets.all(16.0),
         child: Center(

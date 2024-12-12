@@ -34,13 +34,13 @@ class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerPr
   int? selectedIndex;
   int score = 0;
 
-  int lastScore = 0; // New field for last score
+  int lastScore = 0;
   int attempts = 0;
   late AudioPlayer _audioPlayer;
   bool isHintActive = false;
   late SharedPreferences prefs;
   late FlutterTts flutterTts;
-  bool _isConfettiPlaying = false; // Track confetti animation state
+  bool _isConfettiPlaying = false;
 
   List<bool> opening = List.generate(12, (index) => false);
   final firestore = FirebaseFirestore.instance;
@@ -61,10 +61,12 @@ class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerPr
   void _initializePreferences() async {
     prefs = await SharedPreferences.getInstance();
     setState(() {
-      score = prefs.getInt('lastScore') ?? 0; // Fetch last score or default to 0
+      score = prefs.getInt('lastScore') ?? 0; // Fetch last score
     });
   }
 
+
+  // Fetch the last score
   Future<void> fetchLastScore() async {
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) return;
@@ -100,6 +102,8 @@ class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerPr
     }
   }
 
+
+  // Save the current score
   Future<void> saveScoreToFirebase() async {
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) return;
@@ -279,7 +283,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerPr
   void _initializePreference() async {
     prefs = await SharedPreferences.getInstance();
     setState(() {
-      score = prefs.getInt('lastScore') ?? 0; // Fetch last score or default to 0
+      score = prefs.getInt('lastScore') ?? 0; // Fetch last score
     });
   }
 
@@ -360,7 +364,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerPr
                 ),
               ),
               Spacer(), // Pushes content to center vertically
-              // Gift grid view
+
               Center(
                 child: GridView.builder(
                   shrinkWrap: true,
@@ -406,7 +410,7 @@ class _GiftMatchingPageState extends State<GiftMatchingPage> with SingleTickerPr
                   style: TextStyle(fontSize: 18),
                 ),
               ),
-              Spacer(), // Balances spacing at the bottom
+              Spacer(),
             ],
           ),
           ConfettiWidget(

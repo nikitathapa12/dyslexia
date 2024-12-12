@@ -69,10 +69,10 @@ class AssignmentsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Assignments', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'OpenDyslexic')),
-        backgroundColor: Colors.teal, // Teal color for the app bar
+        backgroundColor: Colors.teal,
         elevation: 4,
       ),
-      backgroundColor: Colors.teal[50], // Light teal background color
+      backgroundColor: Colors.teal[50],
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('assignments') // Assuming global assignments collection
@@ -104,10 +104,10 @@ class AssignmentsPage extends StatelessWidget {
               String assignmentType = assignmentData.containsKey('assignmentType')
                   ? assignmentData['assignmentType']
                   : 'No Type'; // Default value if 'assignmentType' is missing
-// Default value if 'type' is missing
+
 
               return Card(
-                color: Colors.white, // White background for cards
+                color: Colors.white,
                 margin: EdgeInsets.symmetric(vertical: 8.0),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -130,7 +130,7 @@ class AssignmentsPage extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'Type: $assignmentType', // Display the assignment type
+                        'Type: $assignmentType',
                         style: TextStyle(fontSize: 14, color: Colors.teal[700], fontFamily: 'OpenDyslexic'),
                       ),
                     ],

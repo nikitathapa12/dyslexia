@@ -29,9 +29,9 @@ class _SignUpPageState extends State<SignUpPage> {
   // Sign up method using Firebase
   Future<void> _signUp() async {
     if (_formKey.currentState != null && _formKey.currentState!.validate()) {
-      _formKey.currentState!.save(); // Save the form values
+      _formKey.currentState!.save();
       try {
-        // Sign up using FirebaseAuth
+
         final userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email, password: password);
 

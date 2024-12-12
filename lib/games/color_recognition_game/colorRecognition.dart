@@ -66,7 +66,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
   String selectedFruitImage = '';
   Color selectedFruitColor = Colors.red;
   int score = 0;
-  int lastScore = 0; // New field for last score
+  int lastScore = 0;
   int attempts = 0;
   bool isGameOver = false;
   bool showHint = false;
@@ -216,7 +216,7 @@ class _ColorRecognitionGameState extends State<ColorRecognitionGame>
       await _speak('Oops, try again.');
       setState(() {
         attempts++;
-        if (attempts >= 2) {  // End the game after 7 attempts
+        if (attempts >= 2) {  // End the game after 2 attempts
           isGameOver = true;
 
           // Save the score to Firebase and navigate to the GameOverScreen

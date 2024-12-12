@@ -55,7 +55,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
   }
 
   // Load the last score from Firestore
-  // Load the last score from Firestore
+
   Future<void> fetchLastScore() async {
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) return;
@@ -402,7 +402,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
 
 
 
-  // Method to display the hint message
+  //  display the hint message
   Widget _buildHintMessage() {
     if (_showHint) {
       return Padding(
@@ -421,7 +421,7 @@ class _CherryCountingGameState extends State<CherryCountingGame> with TickerProv
         ),
       );
     }
-    return Container(); // Return an empty container when _showHint is false
+    return Container();
   }
 
 

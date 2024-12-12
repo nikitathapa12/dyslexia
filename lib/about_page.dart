@@ -17,7 +17,7 @@ class AboutPage extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.settings),
             onPressed: () {
-              // Navigate to the settings page
+
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => SettingsPage()),
@@ -27,14 +27,14 @@ class AboutPage extends StatelessWidget {
         ],
       ),
       body: Container(
-        color: Color(0xFFF7F1E1), // Light beige background color
+        color: Color(0xFFF7F1E1),
         padding: EdgeInsets.all(16.0),
         child: ListView(
           children: [
             Text(
               'About DysLearn',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -42,7 +42,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'DysLearn is an educational application designed to assist children with dyslexia. It provides engaging activities to help children improve their learning skills through interactive games and tasks.',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -50,7 +50,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'Instructions:',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -61,7 +61,7 @@ class AboutPage extends StatelessWidget {
                   '3. Track progress through the dashboard.\n'
                   '4. Navigate through the application using the menu.',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -69,7 +69,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'Privacy Policy:',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -77,7 +77,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'We value your privacy. All user data is securely stored and never shared with third parties.',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -85,7 +85,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'Terms of Use:',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),
@@ -93,7 +93,7 @@ class AboutPage extends StatelessWidget {
             Text(
               'By using DysLearn, you agree to our terms of service and privacy policy.',
               style: TextStyle(
-                fontSize: fontSize, fontFamily: fontStyle, // Use OpenDyslexic font
+                fontSize: fontSize, fontFamily: fontStyle,
                 color: Colors.black,
               ),
             ),

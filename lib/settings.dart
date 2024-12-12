@@ -108,7 +108,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   onPressed: () async {
                     // Save the settings to SharedPreferences
                     FontSettings settings = FontSettings(fontSize: _fontSize, fontFamily: _fontStyle);
-                    await settings.saveToPreferences(); // Save the settings locally
+                    await settings.saveToPreferences();
 
                     // Update the fontSettingsNotifier
                     fontSettingsNotifier.value = settings;
@@ -121,7 +121,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       SnackBar(content: Text('Settings saved successfully!')),
                     );
 
-                    // Navigate to Homepage after saving
+
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(

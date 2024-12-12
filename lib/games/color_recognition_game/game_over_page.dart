@@ -28,7 +28,7 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
       vsync: this,
     );
 
-    // Define the animation timings for each star
+    // animation timings for each star
     _star1 = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _starController, curve: Interval(0.0, 0.33)),
     );
@@ -93,7 +93,7 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
                     ],
                   ),
                   child: Image.asset(
-                    'assets/images/cartoon.gif', // Cute character
+                    'assets/images/cartoon.gif',
                     width: 200,
                     height: 180,
                   ),
@@ -153,7 +153,7 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
                 ),
                 SizedBox(height: 40),
 
-                // Play Again & Next Game Buttons (Image Buttons)
+                // Play Again & Next Game Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -161,7 +161,7 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
                     GestureDetector(
                       onTap: widget.onPlayAgain,
                       child: Image.asset(
-                        'assets/images/reload_button.png', // Replace with your play again image button
+                        'assets/images/reload_button.png',
                         width: 100,
                         height: 100,
                       ),
@@ -171,7 +171,7 @@ class _GameOverScreenState extends State<GameOverScreen> with TickerProviderStat
                     GestureDetector(
                       onTap: widget.onNextGame,
                       child: Image.asset(
-                        'assets/images/next.gif', // Replace with your next game image button
+                        'assets/images/next.gif',
                         width: 120,
                         height: 120,
                       ),

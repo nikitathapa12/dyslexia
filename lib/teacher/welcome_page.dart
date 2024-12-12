@@ -46,41 +46,22 @@ class _TeacherWelcomePageState extends State<TeacherWelcomePage> with SingleTick
                     Text(
                       'Welcome to Teacher Dashboard',
                       style: TextStyle(
-                        fontSize: 32, // Increased font size for better visibility
+                        fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF2C3E50), // Soft blue color for text
-                        fontFamily: 'OpenDyslexic', // Dyslexic-friendly font
-                        letterSpacing: 2.0, // Slight letter spacing to improve readability
+                        color: Color(0xFF2C3E50),
+                        fontFamily: 'OpenDyslexic',
+                        letterSpacing: 2.0,
                         shadows: [
                           Shadow(
-                            offset: Offset(2.0, 2.0), // Shadow for text to improve contrast
+                            offset: Offset(2.0, 2.0),
                             blurRadius: 3.0,
                             color: Colors.black.withOpacity(0.5),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: 20), // Space between the title and the button
-                    // ElevatedButton(
-                    //   onPressed: () {
-                    //     // Navigate to the teacher dashboard or another page
-                    //   },
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: Color(0xFF3498DB), // Blue background for the button
-                    //     padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(8.0), // Rounded corners
-                    //     ),
-                    //   ),
-                    //   child: Text(
-                    //     'Go to Dashboard',
-                    //     style: TextStyle(
-                    //       fontSize: 18,
-                    //       fontWeight: FontWeight.bold,
-                    //       color: Colors.white,
-                    //     ),
-                    //   ),
-                    // ),
+                    SizedBox(height: 20),
+
                   ],
                 ),
               ),

@@ -14,15 +14,15 @@ class CatWordGame extends StatefulWidget {
 }
 
 class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStateMixin {
-  final String word = "CAT"; // The word to fill
-  List<String> letters = ['A', 'T', 'C']; // Letters to select
-  late List<String?> filledLetters; // Track filled letters
+  final String word = "CAT";
+  List<String> letters = ['A', 'T', 'C'];
+  late List<String?> filledLetters;
   late AnimationController _controller;
-  late FirebaseFirestore firestore; // Firestore instance
+  late FirebaseFirestore firestore;
 
   bool _isCompleted = false;
-  final AudioPlayer _audioPlayer = AudioPlayer(); // Audio player instance
-  final AudioPlayer _backgroundMusicPlayer = AudioPlayer(); // Background music player
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _backgroundMusicPlayer = AudioPlayer();
 
   int score = 0;
   int lastScore = 0;
@@ -30,22 +30,22 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    filledLetters = List.generate(word.length, (index) => null); // Initialize filled letters
+    filledLetters = List.generate(word.length, (index) => null);
     _controller = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
     );
 
     firestore = FirebaseFirestore.instance;
-    _playBackgroundMusic(); // Start background music
+    _playBackgroundMusic();
     fetchLastScore(); // Fetch the last score from Firestore
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // Clean up the controller
-    _audioPlayer.dispose(); // Dispose of audio player for sound effects
-    _backgroundMusicPlayer.dispose(); // Dispose background music
+    _controller.dispose();
+    _audioPlayer.dispose();
+    _backgroundMusicPlayer.dispose();
     super.dispose();
   }
 
@@ -135,7 +135,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
 
   // Play letter sound (phonics) or word sound
   Future<void> _playSound(String soundFile) async {
-    await _audioPlayer.play(AssetSource('audio/$soundFile.mp3')); // Play sound from assets
+    await _audioPlayer.play(AssetSource('audio/$soundFile.mp3'));
   }
 
   // Handle letter tap event
@@ -157,13 +157,14 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       // Check if the word is completed
       if (_isWordCompleted()) {
         _isCompleted = true;
-        _controller.forward(); // Start waving animation
+        _controller.forward();
 
         saveScoreToFirebase(); // Save score to Firestore
 
+
         // Wait for the last phonics sound to finish before playing "cat"
         Future.delayed(Duration(seconds: 1), () {
-          _playSound('cat'); // Play the "cat" sound after a short delay
+          _playSound('cat');
 
           // Update scores
           setState(() {
@@ -173,7 +174,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
 
           // After playing sound, navigate to the next word task
           Future.delayed(Duration(seconds: 2), () {
-            _navigateToNextGame(); // Navigate to the next game
+            _navigateToNextGame();
           });
         });
       }
@@ -192,8 +193,8 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
       if (filledLetters[i] == null) {
         String correctLetter = word[i];
         if (letters.contains(correctLetter)) {
-          _onLetterTapped(correctLetter, i); // Use the hint
-          break; // Use only one hint at a time
+          _onLetterTapped(correctLetter, i);
+          break;
         }
       }
     }
@@ -212,7 +213,7 @@ class _CatWordGameState extends State<CatWordGame> with SingleTickerProviderStat
     return Scaffold(
       body: Stack(
         children: [
-          // Background container (GIF can be used here)
+
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(

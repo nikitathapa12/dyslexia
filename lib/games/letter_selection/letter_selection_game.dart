@@ -48,6 +48,8 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
     super.dispose();
   }
 
+
+  // Fetch the last score from Firebase
   Future<void> fetchLastScore() async {
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) return;
@@ -83,6 +85,8 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
     }
   }
 
+
+  // Save the current score to Firebase
   Future<void> saveScoreToFirebase() async {
     User? parent = FirebaseAuth.instance.currentUser;
     if (parent == null) return;
@@ -120,24 +124,30 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
     }
   }
 
+
+  // Play background music
   Future<void> _playBackgroundMusic() async {
     await _audioPlayer.setSource(AssetSource('audio/background_music.mp3'));
     await _audioPlayer.setVolume(0.5);
     await _audioPlayer.resume();
   }
 
+
+  // Play letter sound (phonics) or word sound
   Future<void> _playSound(String soundFile) async {
     await _audioPlayer.play(AssetSource('audio/$soundFile.mp3'));
   }
 
+
+  // Handle letter tap events
   void _onLetterTapped(String letter) {
     // Find the correct index for the tapped letter
     for (int i = 0; i < word.length; i++) {
       if (word[i] == letter && filledLetters[i] == null) {
         setState(() {
           filledLetters[i] = letter; // Place the letter in its correct position
-          letters.remove(letter);   // Remove the letter from the options
-          score += 1;               // Increment the score
+          letters.remove(letter);
+          score += 1;
         });
 
         _playSound(letter.toLowerCase());
@@ -165,12 +175,12 @@ class _LetterSelectionGameState extends State<LetterSelectionGame>
             });
           });
         }
-        return; // Stop searching once the letter is placed
+        return;
       }
     }
 
     // If the letter doesn't match any unfilled position, provide feedback
-    _playSound('error'); // Play an error sound or provide visual feedback
+    _playSound('error');
   }
 
 

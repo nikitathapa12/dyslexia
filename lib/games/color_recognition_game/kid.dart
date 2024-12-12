@@ -4,7 +4,7 @@ class Kid extends StatefulWidget {
   final Color color;
   final Widget child;
   final void Function(Color, Color) onMatched;
-  final bool hasMatchedBag; // New flag to display the bag
+  final bool hasMatchedBag;
   final String? matchedBagImage; // Matched bag image path
 
   Kid({
